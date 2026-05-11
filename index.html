@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- スマホでの拡大縮小によるレイアウト崩れを防ぐ設定を追加 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>資産管理ポートフォリオ</title>
     <!-- Tailwind CSS -->
@@ -36,7 +35,6 @@
         .tab-inactive:hover { background-color: #f8fafc; color: #334155; }
     </style>
 </head>
-<!-- h-screen を h-[100dvh] に変更し、スマホのアドレスバーによる高さのズレを解消 -->
 <body class="flex h-[100dvh] overflow-hidden text-sm md:text-base">
 
     <!-- サイドバー -->
@@ -293,14 +291,11 @@
 
                         <div class="bg-emerald-50 p-3 md:p-4 rounded-lg border border-emerald-100 mt-4">
                             <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">3. 計算用 為替レート (USD/JPY)</h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-2 md:mb-3">米国株をFinnhubで取得した際、円に換算するためのレートを設定します。価格自動取得時に自動更新されます。</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-2 md:mb-3">米国株をFinnhubで取得した際、円に換算するためのレートを設定します。</p>
                             <div class="flex items-center text-xs md:text-sm">
                                 <span class="mr-2 text-slate-700 font-bold">1ドル = </span>
                                 <input type="number" id="setting-fx-rate" step="0.01" placeholder="150" class="w-24 md:w-32 border border-slate-300 rounded p-1.5 md:p-2 outline-none focus:border-primary transition-colors text-right font-bold">
                                 <span class="ml-2 text-slate-700 font-bold">円</span>
-                                <button onclick="fetchFxRate()" type="button" class="ml-3 md:ml-4 bg-white border border-emerald-200 hover:bg-emerald-100 text-emerald-700 px-2 py-1 md:px-3 md:py-1.5 rounded transition-colors text-[10px] md:text-xs font-medium shadow-sm whitespace-nowrap">
-                                    <i class="fa-solid fa-rotate-right mr-1" id="fx-refresh-icon"></i>最新レート取得
-                                </button>
                             </div>
                         </div>
                         
@@ -344,7 +339,7 @@
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6 text-center transform transition-all">
             <div id="msg-modal-icon" class="text-3xl md:text-4xl mb-3 md:mb-4 text-primary"><i class="fa-solid fa-circle-info"></i></div>
             <h3 class="text-base md:text-lg font-bold text-slate-800 mb-2" id="msg-modal-title">通知</h3>
-            <p class="text-slate-600 mb-6 text-xs md:text-sm" id="msg-modal-text">メッセージ</p>
+            <div class="text-slate-600 mb-6 text-xs md:text-sm overflow-y-auto max-h-40 text-left bg-slate-50 p-3 rounded border border-slate-100" id="msg-modal-text">メッセージ</div>
             <button onclick="closeMsgModal()" class="w-full px-4 py-2 bg-primary text-white rounded hover:bg-blue-700 font-medium transition-colors shadow-sm text-sm">OK</button>
         </div>
     </div>
@@ -388,7 +383,7 @@
                     holdings = holdings.map(h => ({ 
                         ...h, 
                         accountType: h.accountType || "特定",
-                        type: h.type || (h.code.match(/^[A-Z]/) ? 'US' : 'JP') // 旧データの互換性
+                        type: h.type || (h.code.match(/^[A-Z]/) ? 'US' : 'JP')
                     }));
                 } catch(e) {
                     holdings = [...DEFAULT_DATA];
@@ -416,29 +411,6 @@
             });
         }
 
-        async function fetchFxRate() {
-            const icon = document.getElementById('fx-refresh-icon');
-            if(icon) icon.classList.add('fa-spin');
-            try {
-                const res = await fetch('https://open.er-api.com/v6/latest/USD');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.rates && data.rates.JPY) {
-                        const rate = data.rates.JPY;
-                        document.getElementById('setting-fx-rate').value = rate.toFixed(2);
-                        localStorage.setItem('setting_fx_rate', rate.toFixed(2));
-                        showMsg("為替レート取得成功", `最新のレート（1ドル = ${rate.toFixed(2)}円）を取得し、保存しました。`, "success");
-                    }
-                } else {
-                    throw new Error("APIエラー");
-                }
-            } catch(e) {
-                showMsg("エラー", "為替レートの取得に失敗しました。", "error");
-            } finally {
-                if(icon) icon.classList.remove('fa-spin');
-            }
-        }
-
         async function refreshPrices() {
             const now = Date.now();
             refreshTimestamps = refreshTimestamps.filter(t => now - t < 60000);
@@ -454,24 +426,8 @@
             
             const finnhubKey = localStorage.getItem('api_key_finnhub');
             const customUrl = localStorage.getItem('api_url_custom');
-            let fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
+            const fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
             
-            // 為替レートの自動取得 (バックグラウンドで実行)
-            try {
-                const fxRes = await fetch('https://open.er-api.com/v6/latest/USD');
-                if (fxRes.ok) {
-                    const fxData = await fxRes.json();
-                    if (fxData && fxData.rates && fxData.rates.JPY) {
-                        fxRate = fxData.rates.JPY;
-                        localStorage.setItem('setting_fx_rate', fxRate.toFixed(2));
-                        const fxInput = document.getElementById('setting-fx-rate');
-                        if (fxInput) fxInput.value = fxRate.toFixed(2);
-                    }
-                }
-            } catch(e) {
-                console.warn("為替レートの自動取得に失敗しました。前回値を使用します。");
-            }
-
             const uniqueHoldings = [];
             holdings.forEach(h => {
                 if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) {
@@ -517,19 +473,29 @@
                         const res = await fetch(url);
                         if(res.ok) {
                             const data = await res.json();
+                            
+                            if(data.error) {
+                                showMsg("GASエラー", `ロボットがエラーを返しました。<br>${data.detail || data.error}`, "error");
+                                icon.classList.remove('fa-spin');
+                                return;
+                            }
+                            
                             if(data.results) {
                                 Object.keys(data.results).forEach(code => {
                                     marketPrices[code] = data.results[code];
                                 });
                             }
                             if(data.errors && data.errors.length > 0) {
-                                data.errors.forEach(code => failedCodes.push(code));
+                                data.errors.forEach(code => {
+                                    const reason = data.errorDetails && data.errorDetails[code] ? ` <span class="text-[10px] text-slate-400">(${data.errorDetails[code]})</span>` : '';
+                                    failedCodes.push(`${code}${reason}`);
+                                });
                             }
                         } else {
-                            jpFundHoldings.forEach(h => failedCodes.push(h.code));
+                            jpFundHoldings.forEach(h => failedCodes.push(`${h.code} (通信失敗)`));
                         }
                     } catch(e) {
-                        jpFundHoldings.forEach(h => failedCodes.push(h.code));
+                        jpFundHoldings.forEach(h => failedCodes.push(`${h.code} (ネットワークエラー)`));
                     }
                 }
             }
@@ -538,7 +504,7 @@
             icon.classList.remove('fa-spin');
 
             if (failedCodes.length > 0) {
-                showMsg("更新完了 (一部失敗)", `一部の項目の情報が取得できませんでした。<br><br><span class="text-rose-600 font-bold">失敗した項目:</span><br>${failedCodes.join(', ')}`, "error");
+                showMsg("更新完了 (一部失敗)", `一部の項目の情報が取得できませんでした。<br><br><span class="text-rose-600 font-bold">失敗した項目:</span><br>${failedCodes.join('<br>')}`, "error");
             }
         }
 
