@@ -293,11 +293,14 @@
 
                         <div class="bg-emerald-50 p-3 md:p-4 rounded-lg border border-emerald-100 mt-4">
                             <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">3. 計算用 為替レート (USD/JPY)</h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-2 md:mb-3">米国株をFinnhubで取得した際、円に換算するためのレートを設定します。</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-2 md:mb-3">米国株をFinnhubで取得した際、円に換算するためのレートを設定します。価格自動取得時に自動更新されます。</p>
                             <div class="flex items-center text-xs md:text-sm">
                                 <span class="mr-2 text-slate-700 font-bold">1ドル = </span>
                                 <input type="number" id="setting-fx-rate" step="0.01" placeholder="150" class="w-24 md:w-32 border border-slate-300 rounded p-1.5 md:p-2 outline-none focus:border-primary transition-colors text-right font-bold">
                                 <span class="ml-2 text-slate-700 font-bold">円</span>
+                                <button onclick="fetchFxRate()" type="button" class="ml-3 md:ml-4 bg-white border border-emerald-200 hover:bg-emerald-100 text-emerald-700 px-2 py-1 md:px-3 md:py-1.5 rounded transition-colors text-[10px] md:text-xs font-medium shadow-sm whitespace-nowrap">
+                                    <i class="fa-solid fa-rotate-right mr-1" id="fx-refresh-icon"></i>最新レート取得
+                                </button>
                             </div>
                         </div>
                         
@@ -413,6 +416,29 @@
             });
         }
 
+        async function fetchFxRate() {
+            const icon = document.getElementById('fx-refresh-icon');
+            if(icon) icon.classList.add('fa-spin');
+            try {
+                const res = await fetch('https://open.er-api.com/v6/latest/USD');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.rates && data.rates.JPY) {
+                        const rate = data.rates.JPY;
+                        document.getElementById('setting-fx-rate').value = rate.toFixed(2);
+                        localStorage.setItem('setting_fx_rate', rate.toFixed(2));
+                        showMsg("為替レート取得成功", `最新のレート（1ドル = ${rate.toFixed(2)}円）を取得し、保存しました。`, "success");
+                    }
+                } else {
+                    throw new Error("APIエラー");
+                }
+            } catch(e) {
+                showMsg("エラー", "為替レートの取得に失敗しました。", "error");
+            } finally {
+                if(icon) icon.classList.remove('fa-spin');
+            }
+        }
+
         async function refreshPrices() {
             const now = Date.now();
             refreshTimestamps = refreshTimestamps.filter(t => now - t < 60000);
@@ -428,8 +454,24 @@
             
             const finnhubKey = localStorage.getItem('api_key_finnhub');
             const customUrl = localStorage.getItem('api_url_custom');
-            const fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
+            let fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
             
+            // 為替レートの自動取得 (バックグラウンドで実行)
+            try {
+                const fxRes = await fetch('https://open.er-api.com/v6/latest/USD');
+                if (fxRes.ok) {
+                    const fxData = await fxRes.json();
+                    if (fxData && fxData.rates && fxData.rates.JPY) {
+                        fxRate = fxData.rates.JPY;
+                        localStorage.setItem('setting_fx_rate', fxRate.toFixed(2));
+                        const fxInput = document.getElementById('setting-fx-rate');
+                        if (fxInput) fxInput.value = fxRate.toFixed(2);
+                    }
+                }
+            } catch(e) {
+                console.warn("為替レートの自動取得に失敗しました。前回値を使用します。");
+            }
+
             const uniqueHoldings = [];
             holdings.forEach(h => {
                 if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) {
