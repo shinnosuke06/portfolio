@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>資産管理ポートフォリオ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'Noto Sans JP', 'sans-serif'] },
+                    colors: { primary: '#2563eb' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f8fafc; color: #1e293b; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .tab-active { background-color: #eff6ff; border-left: 4px solid #2563eb; color: #2563eb; font-weight: 600; }
+        .tab-inactive { border-left: 4px solid transparent; color: #64748b; }
+        .tab-inactive:hover { background-color: #f8fafc; color: #334155; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-sm md:text-base">
+
+    <!-- サイドバー -->
+    <aside class="w-20 md:w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm">
+        <div class="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-200">
+            <i class="fa-solid fa-chart-pie text-primary text-2xl"></i>
+            <span class="ml-3 font-bold text-lg hidden md:block text-slate-800">MyPortfolio</span>
+        </div>
+        <nav class="flex-1 py-4 space-y-1">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center px-6 py-3 tab-active transition-colors">
+                <i class="fa-solid fa-chart-line text-lg w-6 text-center"></i>
+                <span class="ml-3 hidden md:block">ダッシュボード</span>
+            </button>
+            <button onclick="switchTab('holdings')" id="nav-holdings" class="w-full flex items-center px-6 py-3 tab-inactive transition-colors">
+                <i class="fa-solid fa-list text-lg w-6 text-center"></i>
+                <span class="ml-3 hidden md:block">保有資産一覧</span>
+            </button>
+            <button onclick="switchTab('manage')" id="nav-manage" class="w-full flex items-center px-6 py-3 tab-inactive transition-colors">
+                <i class="fa-solid fa-pen-to-square text-lg w-6 text-center"></i>
+                <span class="ml-3 hidden md:block">データ管理</span>
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="w-full flex items-center px-6 py-3 tab-inactive transition-colors">
+                <i class="fa-solid fa-gear text-lg w-6 text-center"></i>
+                <span class="ml-3 hidden md:block">設定</span>
+            </button>
+        </nav>
+    </aside>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <header class="h-16 flex items-center justify-between px-6 border-b border-slate-200 bg-white z-10 shadow-sm">
+            <h1 id="page-title" class="text-xl font-bold text-slate-800">ダッシュボード</h1>
+            <button onclick="refreshPrices()" class="p-2 rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center px-4 border border-slate-200 shadow-sm" title="一括で現在値を更新">
+                <i id="refresh-icon" class="fa-solid fa-rotate-right mr-2"></i> <span class="hidden sm:inline font-medium">価格自動取得</span>
+            </button>
+        </header>
+
+        <div id="content-area" class="flex-1 overflow-auto p-4 md:p-8 bg-slate-50">
+            
+            <!-- ====== 1. ダッシュボード ====== -->
+            <div id="view-dashboard" class="space-y-6 block max-w-7xl mx-auto">
+                <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center">
+                        <label for="dash-broker-filter" class="text-slate-600 font-medium mr-3">表示対象証券会社:</label>
+                        <select id="dash-broker-filter" onchange="updateAllViews()" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 outline-none">
+                            <option value="ALL">全体 (合算)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-slate-100"><i class="fa-solid fa-wallet text-8xl"></i></div>
+                        <h2 class="text-slate-500 text-sm font-medium mb-1 relative z-10">総資産額</h2>
+                        <div class="text-3xl font-bold text-slate-800 mb-2 relative z-10" id="dash-total-assets">¥0</div>
+                        <div class="flex items-center text-sm relative z-10">
+                            <span id="dash-total-profit" class="font-medium flex items-center">¥0 (0.00%)</span>
+                            <span class="text-slate-500 ml-2">評価損益</span>
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-2 bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                        <h2 class="text-slate-500 text-sm font-medium mb-4">証券会社別 資産状況</h2>
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="relative h-48 w-full lg:w-1/2 flex justify-center">
+                                <canvas id="brokerChart"></canvas>
+                            </div>
+                            <div class="w-full lg:w-1/2 overflow-y-auto max-h-48 pr-2" id="dash-broker-list">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                        <h2 class="text-slate-500 text-sm font-medium mb-4">アセットクラス比率</h2>
+                        <div class="relative h-48 w-full flex justify-center">
+                            <canvas id="typeChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-slate-500 text-sm font-medium">資産推移 (シミュレーション)</h2>
+                            <select id="dash-history-period" onchange="renderDashboard()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-md p-1 outline-none cursor-pointer">
+                                <option value="7d">1週間</option>
+                                <option value="1m">1ヶ月</option>
+                                <option value="1y">1年</option>
+                                <option value="all">全て</option>
+                            </select>
+                        </div>
+                        <div class="relative flex-1 min-h-[12rem] w-full flex justify-center">
+                            <canvas id="historyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== 2. 保有資産一覧 ====== -->
+            <div id="view-holdings" class="space-y-6 hidden max-w-7xl mx-auto">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center">
+                        <label for="broker-filter" class="text-slate-600 font-medium mr-3">表示対象:</label>
+                        <select id="broker-filter" onchange="renderHoldingsTable()" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 outline-none">
+                            <option value="ALL">全体 (同一銘柄・同口座は合算)</option>
+                        </select>
+                    </div>
+                    <div class="text-sm text-slate-500">※ 全体表示の場合、平均取得単価は加重平均で計算されます。</div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[950px]">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-sm border-b border-slate-200">
+                                <th class="px-6 py-3 font-medium">証券会社</th>
+                                <th class="px-6 py-3 font-medium">口座・種類</th>
+                                <th class="px-6 py-3 font-medium">銘柄 / ファンド名</th>
+                                <th class="px-6 py-3 font-medium text-right">現在値</th>
+                                <th class="px-6 py-3 font-medium text-right">保有数量</th>
+                                <th class="px-6 py-3 font-medium text-right">平均取得単価</th>
+                                <th class="px-6 py-3 font-medium text-right">評価額 / 手残り予想</th>
+                                <th class="px-6 py-3 font-medium text-right">評価損益</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdings-tbody" class="divide-y divide-slate-200">
+                        </tbody>
+                        <tfoot class="bg-slate-50 border-t border-slate-200 font-bold" id="holdings-tfoot">
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ====== 3. データ管理 ====== -->
+            <div id="view-manage" class="space-y-8 hidden max-w-7xl mx-auto">
+                
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm relative" id="manage-form-container">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2" id="manage-form-title">新規データの追加</h2>
+                    <form id="add-form" onsubmit="handleAddSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">証券会社</label>
+                            <input type="text" id="add-broker" required placeholder="例: SBI証券" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-primary transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">口座区分</label>
+                            <select id="add-account" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-primary transition-colors">
+                                <option value="特定">特定</option>
+                                <option value="一般">一般</option>
+                                <option value="NISA">NISA</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">資産クラス</label>
+                            <select id="add-type" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-primary transition-colors">
+                                <option value="JP">国内株</option>
+                                <option value="US">米国株 (ETF等含む)</option>
+                                <option value="FUND">投資信託</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">銘柄/ファンドコード</label>
+                            <input type="text" id="add-code" required placeholder="例: 7203 または 0331418A" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-primary uppercase transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">銘柄/ファンド名</label>
+                            <input type="text" id="add-name" required placeholder="例: トヨタ自動車" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-primary transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">数量 <span class="text-[10px] text-slate-400">(投信は 保有口数÷1万 など)</span></label>
+                            <input type="number" id="add-qty" required min="0.0001" step="any" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-primary transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">平均取得単価 (円)</label>
+                            <input type="number" id="add-price" required min="0" step="any" class="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-primary transition-colors">
+                        </div>
+                        <div class="flex flex-col space-y-2">
+                            <button type="submit" id="add-submit-btn" class="w-full bg-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors shadow-sm">
+                                <i class="fa-solid fa-plus mr-1"></i> 追加
+                            </button>
+                            <button type="button" id="edit-cancel-btn" onclick="cancelEdit()" class="hidden w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-4 rounded transition-colors">
+                                キャンセル
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-lg font-bold text-slate-800">登録データ一覧（編集・削除）</h2>
+                        <select id="manage-broker-filter" onchange="renderManageTable()" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-1 outline-none">
+                            <option value="ALL">全ての証券会社</option>
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[700px] text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600">
+                                    <th class="px-4 py-2">証券会社</th>
+                                    <th class="px-4 py-2">種類</th>
+                                    <th class="px-4 py-2">銘柄</th>
+                                    <th class="px-4 py-2 text-right">数量</th>
+                                    <th class="px-4 py-2 text-right">取得単価</th>
+                                    <th class="px-4 py-2 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manage-tbody" class="divide-y divide-slate-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-lg font-bold text-slate-800">バックアップ・復元</h2>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">データが消えた時に備えて、以下の文字（JSONデータ）をコピーしてメモ帳などに保存してください。</p>
+                    
+                    <div class="relative">
+                        <textarea id="backup-data" class="w-full h-32 p-3 text-xs font-mono bg-slate-50 border border-slate-300 rounded outline-none focus:border-primary" readonly></textarea>
+                        <button onclick="copyBackup()" class="absolute top-2 right-2 bg-slate-800 text-white text-xs px-3 py-1 rounded hover:bg-slate-700 shadow-sm">
+                            <i class="fa-regular fa-copy mr-1"></i> コピー
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2">データの復元</h3>
+                        <textarea id="import-data" class="w-full h-20 p-2 text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary mb-2" placeholder="ここにバックアップデータを貼り付け..."></textarea>
+                        <button onclick="importBackup()" class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium py-2 px-4 rounded transition-colors shadow-sm">
+                            <i class="fa-solid fa-file-import mr-1"></i> 復元する
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== 4. 設定 ====== -->
+            <div id="view-settings" class="space-y-6 hidden max-w-3xl mx-auto">
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">API連携・外部データ設定</h2>
+                    <p class="text-sm text-slate-600 mb-6">
+                        実際の株価を取得するための設定を行います。入力された情報はブラウザ内にのみ保存されます。
+                    </p>
+                    
+                    <div class="space-y-6">
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h3 class="font-bold text-slate-700 mb-2">1. Finnhub APIキー (米国株・ETF用)</h3>
+                            <input type="password" id="api-key-finnhub" placeholder="キーを入力" class="w-full border border-slate-300 rounded p-2 outline-none focus:border-primary mb-1 transition-colors">
+                        </div>
+
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <h3 class="font-bold text-slate-700 mb-2">2. カスタムAPI エンドポイント (日本株・投資信託用)</h3>
+                            <p class="text-xs text-slate-500 mb-2">GASで作成した株価・投信取得ロボットのURLを設定します。</p>
+                            <input type="text" id="api-url-custom" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-blue-200 rounded p-2 outline-none focus:border-primary text-sm font-mono transition-colors">
+                        </div>
+
+                        <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mt-4">
+                            <h3 class="font-bold text-slate-700 mb-2">3. 計算用 為替レート (USD/JPY)</h3>
+                            <p class="text-xs text-slate-500 mb-3">米国株をFinnhubで取得した際、円に換算するためのレートを設定します。</p>
+                            <div class="flex items-center">
+                                <span class="mr-2 text-slate-700 font-bold">1ドル = </span>
+                                <input type="number" id="setting-fx-rate" step="0.01" placeholder="150" class="w-32 border border-slate-300 rounded p-2 outline-none focus:border-primary transition-colors text-right font-bold">
+                                <span class="ml-2 text-slate-700 font-bold">円</span>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-4 border-t border-slate-200 flex items-center">
+                            <button onclick="saveSettings()" class="bg-primary hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition-colors shadow-sm">
+                                設定を保存
+                            </button>
+                            <span id="save-msg" class="ml-3 text-emerald-600 text-sm font-bold opacity-0 transition-opacity">保存しました！</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- モーダル群 -->
+    <div id="breakdown-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 transform transition-all">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-lg font-bold text-slate-800" id="breakdown-title">内訳</h3>
+                <button onclick="closeBreakdownModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="breakdown-content" class="space-y-1 mb-6 max-h-64 overflow-y-auto pr-2"></div>
+            <button onclick="closeBreakdownModal()" class="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 font-medium transition-colors">閉じる</button>
+        </div>
+    </div>
+
+    <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 transform transition-all">
+            <h3 class="text-lg font-bold text-slate-800 mb-2">データの削除</h3>
+            <p class="text-slate-600 mb-6" id="delete-modal-text"></p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeDeleteModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 font-medium transition-colors">キャンセル</button>
+                <button onclick="executeDelete()" class="px-4 py-2 bg-rose-600 text-white rounded hover:bg-rose-700 font-medium transition-colors shadow-sm">削除する</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="msg-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center transform transition-all">
+            <div id="msg-modal-icon" class="text-4xl mb-4 text-primary"><i class="fa-solid fa-circle-info"></i></div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2" id="msg-modal-title">通知</h3>
+            <p class="text-slate-600 mb-6 text-sm" id="msg-modal-text">メッセージ</p>
+            <button onclick="closeMsgModal()" class="w-full px-4 py-2 bg-primary text-white rounded hover:bg-blue-700 font-medium transition-colors shadow-sm">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const fmtJpy = new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 });
+        const fmtNum = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 4 });
+        
+        let holdings = [];
+        let marketPrices = {};
+        let charts = { broker: null, type: null, history: null };
+        let deleteTargetId = null; 
+        let editTargetId = null;   
+        let mockHistoryData = [];  
+        let refreshTimestamps = []; 
+
+        const DEFAULT_DATA = [
+            { id: "1", broker: "SBI証券", code: "7203", name: "トヨタ自動車", quantity: 100, avgPrice: 3000, type: "JP", accountType: "特定" },
+            { id: "2", broker: "楽天証券", code: "7203", name: "トヨタ自動車", quantity: 200, avgPrice: 2800, type: "JP", accountType: "特定" },
+            { id: "4", broker: "マネックス証券", code: "AAPL", name: "Apple Inc.", quantity: 20, avgPrice: 25000, type: "US", accountType: "一般" }, 
+            { id: "5", broker: "楽天証券", code: "0331418A", name: "eMAXIS Slim 米国株式(S&P500)", quantity: 2.5, avgPrice: 28000, type: "FUND", accountType: "NISA" }
+        ];
+
+        window.onload = () => {
+            loadData();
+            loadSettings();
+            initPrices();
+            updateAllViews();
+            
+            Chart.defaults.font.family = "'Inter', 'Noto Sans JP', sans-serif";
+            Chart.defaults.color = '#64748b';
+            Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+            Chart.defaults.plugins.tooltip.padding = 10;
+        };
+
+        function loadData() {
+            const saved = localStorage.getItem('myportfolio_data');
+            if (saved) {
+                try {
+                    holdings = JSON.parse(saved);
+                    holdings = holdings.map(h => ({ 
+                        ...h, 
+                        accountType: h.accountType || "特定",
+                        type: h.type || (h.code.match(/^[A-Z]/) ? 'US' : 'JP') // 旧データの互換性
+                    }));
+                } catch(e) {
+                    holdings = [...DEFAULT_DATA];
+                }
+            } else {
+                holdings = [...DEFAULT_DATA];
+            }
+            updateBrokerFilterOptions();
+            updateBackupTextarea();
+        }
+
+        function saveData() {
+            localStorage.setItem('myportfolio_data', JSON.stringify(holdings));
+            updateBrokerFilterOptions();
+            updateBackupTextarea();
+            updateAllViews();
+        }
+
+        function initPrices() {
+            holdings.forEach(h => {
+                if (!marketPrices[h.code]) {
+                    const ratio = 0.9 + (Math.random() * 0.2); 
+                    marketPrices[h.code] = Math.round(h.avgPrice * ratio);
+                }
+            });
+        }
+
+        // ===== 本物のAPI通信処理（投資信託・一括取得対応） =====
+        async function refreshPrices() {
+            const now = Date.now();
+            refreshTimestamps = refreshTimestamps.filter(t => now - t < 60000);
+            
+            if (refreshTimestamps.length >= 5) {
+                showMsg("制限に達しました", "1分間に5回を超える更新はできません。<br>1分後に再度実施お願いいたします。", "error");
+                return;
+            }
+            refreshTimestamps.push(now);
+
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+            
+            const finnhubKey = localStorage.getItem('api_key_finnhub');
+            const customUrl = localStorage.getItem('api_url_custom');
+            const fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
+            
+            // 全ての銘柄を「米国株」と「日本株・投信」に分ける
+            const uniqueHoldings = [];
+            holdings.forEach(h => {
+                if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) {
+                    uniqueHoldings.push({ code: h.code, type: h.type });
+                }
+            });
+
+            const failedCodes = [];
+            
+            // 1. 米国株の処理 (Finnhub)
+            const usHoldings = uniqueHoldings.filter(h => h.type === 'US');
+            if (usHoldings.length > 0) {
+                if (!finnhubKey) {
+                    usHoldings.forEach(h => failedCodes.push(`${h.code}(設定なし)`));
+                } else {
+                    // Finnhubへ並列リクエスト
+                    await Promise.all(usHoldings.map(async (h) => {
+                        try {
+                            const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${h.code}&token=${finnhubKey}`);
+                            if(res.ok) {
+                                const data = await res.json();
+                                if(data.c && data.c > 0) {
+                                    // ドルで返ってくるので設定した為替レートで円換算
+                                    marketPrices[h.code] = data.c * fxRate;
+                                } else {
+                                    failedCodes.push(h.code);
+                                }
+                            } else {
+                                failedCodes.push(h.code);
+                            }
+                        } catch(e) {
+                            failedCodes.push(h.code);
+                        }
+                    }));
+                }
+            }
+
+            // 2. 日本株・投資信託の処理 (カスタムAPI/GAS) 一括取得
+            const jpFundHoldings = uniqueHoldings.filter(h => h.type === 'JP' || h.type === 'FUND');
+            if (jpFundHoldings.length > 0) {
+                if (!customUrl) {
+                    jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(設定なし)`));
+                } else {
+                    try {
+                        const codesStr = jpFundHoldings.map(h => h.code).join(',');
+                        const url = `${customUrl}?codes=${codesStr}`;
+                        const res = await fetch(url);
+                        if(res.ok) {
+                            const data = await res.json();
+                            if(data.results) {
+                                Object.keys(data.results).forEach(code => {
+                                    marketPrices[code] = data.results[code];
+                                });
+                            }
+                            if(data.errors && data.errors.length > 0) {
+                                data.errors.forEach(code => failedCodes.push(code));
+                            }
+                        } else {
+                            jpFundHoldings.forEach(h => failedCodes.push(h.code));
+                        }
+                    } catch(e) {
+                        jpFundHoldings.forEach(h => failedCodes.push(h.code));
+                    }
+                }
+            }
+
+            updateAllViews();
+            icon.classList.remove('fa-spin');
+
+            if (failedCodes.length > 0) {
+                showMsg("更新完了 (一部失敗)", `一部の項目の情報が取得できませんでした。<br><br><span class="text-rose-600 font-bold">失敗した項目:</span><br>${failedCodes.join(', ')}`, "error");
+            }
+        }
+
+        function switchTab(tabId) {
+            const titles = { 'dashboard': 'ダッシュボード', 'holdings': '保有資産一覧', 'manage': 'データ管理', 'settings': '設定' };
+            document.getElementById('page-title').innerText = titles[tabId];
+
+            ['dashboard', 'holdings', 'manage', 'settings'].forEach(id => {
+                document.getElementById(`nav-${id}`).className = id === tabId 
+                    ? "w-full flex items-center px-6 py-3 tab-active transition-colors" 
+                    : "w-full flex items-center px-6 py-3 tab-inactive transition-colors";
+                
+                const view = document.getElementById(`view-${id}`);
+                if (id === tabId) { view.classList.remove('hidden'); view.classList.add('block'); } 
+                else { view.classList.remove('block'); view.classList.add('hidden'); }
+            });
+        }
+
+        function updateAllViews() {
+            renderDashboard();
+            renderHoldingsTable();
+            renderManageTable();
+        }
+
+        function calcNetValue(currentValue, costValue, accountType) {
+            if (accountType === 'NISA') return currentValue;
+            const profit = currentValue - costValue;
+            if (profit > 0) {
+                return currentValue - (profit * 0.20315);
+            }
+            return currentValue;
+        }
+
+        function getAggregatedData(brokerFilter) {
+            let targetData = holdings;
+            if (brokerFilter !== 'ALL') {
+                targetData = holdings.filter(h => h.broker === brokerFilter);
+            }
+
+            if (brokerFilter !== 'ALL') {
+                return targetData.map(h => ({
+                    ...h,
+                    isAggregated: false,
+                    currentPrice: marketPrices[h.code] || h.avgPrice,
+                    currentValue: (marketPrices[h.code] || h.avgPrice) * h.quantity,
+                    costValue: h.avgPrice * h.quantity
+                }));
+            }
+
+            const aggregated = {};
+            targetData.forEach(h => {
+                const key = h.code + '_' + (h.accountType || '特定');
+                if (!aggregated[key]) {
+                    aggregated[key] = { 
+                        brokers: [h.broker], code: h.code, name: h.name, type: h.type,
+                        accountType: h.accountType || '特定', quantity: 0, totalCost: 0 
+                    };
+                } else if (!aggregated[key].brokers.includes(h.broker)) {
+                    aggregated[key].brokers.push(h.broker);
+                }
+                aggregated[key].quantity += h.quantity;
+                aggregated[key].totalCost += (h.avgPrice * h.quantity);
+            });
+
+            return Object.values(aggregated).map(a => {
+                const avgPrice = a.totalCost / a.quantity;
+                const currentPrice = marketPrices[a.code] || avgPrice;
+                const isAggregated = a.brokers.length > 1;
+                const brokerDisplay = isAggregated ? "複数 (合算)" : a.brokers[0];
+                
+                return {
+                    broker: brokerDisplay,
+                    isAggregated: isAggregated,
+                    code: a.code,
+                    name: a.name,
+                    type: a.type,
+                    accountType: a.accountType,
+                    quantity: a.quantity,
+                    avgPrice: avgPrice,
+                    currentPrice: currentPrice,
+                    currentValue: currentPrice * a.quantity,
+                    costValue: a.totalCost
+                };
+            });
+        }
+
+        function updateBrokerFilterOptions() {
+            const brokers = [...new Set(holdings.map(h => h.broker))];
+            
+            ['dash-broker-filter', 'broker-filter', 'manage-broker-filter'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    const currentVal = el.value;
+                    let html = '';
+                    if(id === 'manage-broker-filter') {
+                        html = `<option value="ALL">全ての証券会社</option>`;
+                    } else {
+                        html = `<option value="ALL">全体 (合算)</option>`;
+                    }
+                    brokers.forEach(b => html += `<option value="${b}">${b}</option>`);
+                    el.innerHTML = html;
+                    
+                    if(brokers.includes(currentVal) || currentVal === 'ALL') {
+                        el.value = currentVal;
+                    }
+                }
+            });
+        }
+
+        function renderDashboard() {
+            const dashFilter = document.getElementById('dash-broker-filter').value;
+            const allData = getAggregatedData(dashFilter);
+            
+            let totalVal = 0;
+            let totalCost = 0;
+            
+            const brokerTotals = {};
+            const brokerCosts = {};
+            const typeTotals = { 'JP': 0, 'US': 0, 'FUND': 0, 'OTHER': 0 };
+
+            let targetHoldings = dashFilter === 'ALL' ? holdings : holdings.filter(h => h.broker === dashFilter);
+
+            targetHoldings.forEach(h => {
+                const val = (marketPrices[h.code] || h.avgPrice) * h.quantity;
+                const cost = h.avgPrice * h.quantity;
+                
+                if(!brokerTotals[h.broker]) { brokerTotals[h.broker] = 0; brokerCosts[h.broker] = 0; }
+                brokerTotals[h.broker] += val;
+                brokerCosts[h.broker] += cost;
+                
+                const type = h.type || 'OTHER';
+                if(typeTotals[type] === undefined) typeTotals[type] = 0;
+                typeTotals[type] += val;
+            });
+
+            allData.forEach(d => {
+                totalVal += d.currentValue;
+                totalCost += d.costValue;
+            });
+
+            const profit = totalVal - totalCost;
+            const profitPct = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+
+            document.getElementById('dash-total-assets').innerText = fmtJpy.format(totalVal);
+            
+            const pEl = document.getElementById('dash-total-profit');
+            if (profit >= 0) {
+                pEl.className = "text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-bold border border-emerald-200 flex items-center";
+                pEl.innerHTML = `<i class="fa-solid fa-arrow-up mr-1 text-xs"></i> +${fmtJpy.format(profit)} (+${profitPct.toFixed(2)}%)`;
+            } else {
+                pEl.className = "text-rose-600 bg-rose-50 px-2 py-1 rounded font-bold border border-rose-200 flex items-center";
+                pEl.innerHTML = `<i class="fa-solid fa-arrow-down mr-1 text-xs"></i> ${fmtJpy.format(profit)} (${profitPct.toFixed(2)}%)`;
+            }
+
+            renderDashBrokerList(brokerTotals, brokerCosts);
+
+            const historyPeriod = document.getElementById('dash-history-period').value || '7d';
+            mockHistoryData = generateHistoryMock(totalVal, historyPeriod);
+
+            drawCharts(brokerTotals, typeTotals, mockHistoryData);
+        }
+
+        function renderDashBrokerList(totals, costs) {
+            const listEl = document.getElementById('dash-broker-list');
+            listEl.innerHTML = '';
+            
+            const sortedBrokers = Object.keys(totals).sort((a, b) => totals[b] - totals[a]);
+            
+            sortedBrokers.forEach(broker => {
+                const val = totals[broker];
+                const cost = costs[broker];
+                const pl = val - cost;
+                const plPct = cost > 0 ? (pl/cost)*100 : 0;
+                
+                let plHtml = pl >= 0 
+                    ? `<span class="text-emerald-600 text-xs font-bold">+${fmtJpy.format(pl)} (+${plPct.toFixed(2)}%)</span>`
+                    : `<span class="text-rose-600 text-xs font-bold">${fmtJpy.format(pl)} (${plPct.toFixed(2)}%)</span>`;
+
+                listEl.innerHTML += `
+                    <div class="flex justify-between items-center py-3 border-b border-slate-100 last:border-0">
+                        <div class="font-medium text-slate-700">${broker}</div>
+                        <div class="text-right leading-tight">
+                            <div class="font-bold text-slate-800 text-base">${fmtJpy.format(val)}</div>
+                            ${plHtml}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if(sortedBrokers.length === 0) {
+                listEl.innerHTML = '<p class="text-slate-500 text-sm mt-4 text-center">データがありません</p>';
+            }
+        }
+
+        function generateHistoryMock(currentTotal, period) {
+            let history = [];
+            let days = 7;
+            if(period === '1m') days = 30;
+            if(period === '1y') days = 365;
+            if(period === 'all') days = 1000;
+
+            let tempVal = currentTotal * (1 - (days * 0.001)); 
+            let step = 1;
+            if(days > 30 && days <= 365) step = 7; 
+            if(days > 365) step = 30; 
+
+            for(let i = days; i >= 1; i -= step) {
+                let d = new Date();
+                d.setDate(d.getDate() - i);
+                let dateStr = (period === '1y' || period === 'all') 
+                    ? d.getFullYear() + '/' + (d.getMonth()+1) 
+                    : (d.getMonth()+1) + '/' + d.getDate();
+                    
+                history.push({ date: dateStr, value: tempVal });
+                tempVal += (currentTotal - tempVal) / (i/step) + (Math.random()-0.5)*(currentTotal*0.02);
+            }
+            
+            let today = new Date();
+            let todayStr = (period === '1y' || period === 'all')
+                ? today.getFullYear() + '/' + (today.getMonth()+1) 
+                : (today.getMonth()+1) + '/' + today.getDate();
+            history.push({ date: todayStr, value: currentTotal });
+            return history;
+        }
+
+        function drawCharts(brokerData, typeData, historyData) {
+            const bgColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+            if(charts.broker) charts.broker.destroy();
+            charts.broker = new Chart(document.getElementById('brokerChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(brokerData),
+                    datasets: [{ data: Object.values(brokerData), backgroundColor: bgColors, borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 12} } } }
+            });
+
+            if(charts.type) charts.type.destroy();
+            charts.type = new Chart(document.getElementById('typeChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['国内株', '米国株', '投資信託', 'その他'],
+                    datasets: [{ 
+                        data: [typeData['JP']||0, typeData['US']||0, typeData['FUND']||0, typeData['OTHER']||0], 
+                        backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#94a3b8'], 
+                        borderWidth: 0 
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 12} } } }
+            });
+
+            if(charts.history) charts.history.destroy();
+            charts.history = new Chart(document.getElementById('historyChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: historyData.map(d => d.date),
+                    datasets: [{
+                        label: '総資産推移',
+                        data: historyData.map(d => d.value),
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true, tension: 0.3, borderWidth: 2, pointRadius: 4, pointHoverRadius: 6
+                    }]
+                },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => fmtJpy.format(ctx.raw) } }
+                    },
+                    scales: {
+                        y: { ticks: { callback: v => (v/10000).toFixed(0) + '万' } }
+                    }
+                }
+            });
+        }
+
+        function renderHoldingsTable() {
+            const filter = document.getElementById('broker-filter').value;
+            const data = getAggregatedData(filter);
+            
+            const tbody = document.getElementById('holdings-tbody');
+            const tfoot = document.getElementById('holdings-tfoot');
+            tbody.innerHTML = '';
+            
+            let sumVal = 0;
+            let sumCost = 0;
+            let sumNet = 0;
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500">データがありません。</td></tr>`;
+                tfoot.innerHTML = '';
+                return;
+            }
+
+            data.forEach(row => {
+                const netVal = calcNetValue(row.currentValue, row.costValue, row.accountType);
+                sumVal += row.currentValue;
+                sumCost += row.costValue;
+                sumNet += netVal;
+                
+                const pl = row.currentValue - row.costValue;
+                const plPct = (pl / row.costValue) * 100;
+                
+                let plClass = "text-slate-600";
+                if(pl > 0) plClass = "text-emerald-600 font-medium";
+                if(pl < 0) plClass = "text-rose-600 font-medium";
+
+                const brokerBadge = row.isAggregated 
+                    ? `<button onclick="showBreakdown('${row.code}', '${row.accountType}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-0.5 rounded text-xs transition-colors cursor-pointer border border-blue-200 font-bold shadow-sm">合算 <i class="fa-solid fa-magnifying-glass text-[10px] ml-1"></i></button>`
+                    : `<span class="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded text-xs">${row.broker}</span>`;
+                
+                const accountBadgeClass = row.accountType === 'NISA' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+                
+                // 資産クラスのバッジ表示用
+                let typeText = "株";
+                if(row.type === 'US') typeText = "米国";
+                if(row.type === 'FUND') typeText = "投信";
+                
+                const accountBadge = `
+                    <div class="flex items-center space-x-1">
+                        <span class="${accountBadgeClass} border px-2 py-0.5 rounded text-xs">${row.accountType || '特定'}</span>
+                        <span class="bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded text-[10px]">${typeText}</span>
+                    </div>
+                `;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-3">${brokerBadge}</td>
+                        <td class="px-6 py-3">${accountBadge}</td>
+                        <td class="px-6 py-3">
+                            <div class="font-bold text-slate-800">${row.code}</div>
+                            <div class="text-xs text-slate-500">${row.name}</div>
+                        </td>
+                        <td class="px-6 py-3 text-right">${fmtJpy.format(row.currentPrice)}</td>
+                        <td class="px-6 py-3 text-right">${fmtNum.format(row.quantity)}</td>
+                        <td class="px-6 py-3 text-right">${fmtJpy.format(row.avgPrice)}</td>
+                        <td class="px-6 py-3 text-right">
+                            <div class="font-bold text-slate-800">${fmtJpy.format(row.currentValue)}</div>
+                            <div class="text-[11px] text-slate-500 mt-1">手残り: ${fmtJpy.format(netVal)}</div>
+                        </td>
+                        <td class="px-6 py-3 text-right ${plClass}">
+                            <div>${pl > 0 ? '+' : ''}${fmtJpy.format(pl)}</div>
+                            <div class="text-xs">${pl > 0 ? '+' : ''}${plPct.toFixed(2)}%</div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            const totalPl = sumVal - sumCost;
+            const totalPlPct = sumCost > 0 ? (totalPl / sumCost) * 100 : 0;
+            let totalPlClass = totalPl > 0 ? "text-emerald-600" : (totalPl < 0 ? "text-rose-600" : "text-slate-600");
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-right">合計:</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="text-lg text-slate-800 font-bold">${fmtJpy.format(sumVal)}</div>
+                        <div class="text-xs text-slate-500 mt-1">手残り: ${fmtJpy.format(sumNet)}</div>
+                    </td>
+                    <td class="px-6 py-4 text-right ${totalPlClass}">
+                        <div class="font-bold">${totalPl > 0 ? '+' : ''}${fmtJpy.format(totalPl)}</div>
+                        <div class="text-xs">${totalPl > 0 ? '+' : ''}${totalPlPct.toFixed(2)}%</div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function renderManageTable() {
+            const filter = document.getElementById('manage-broker-filter').value;
+            const tbody = document.getElementById('manage-tbody');
+            tbody.innerHTML = '';
+            
+            let target = holdings;
+            if (filter !== 'ALL') target = holdings.filter(h => h.broker === filter);
+
+            target.forEach(h => {
+                const acc = h.accountType || '特定';
+                const typeText = h.type === 'FUND' ? '投信' : (h.type === 'US' ? '米国' : '国内');
+                const bgClass = h.id === editTargetId ? 'bg-blue-50' : 'hover:bg-slate-50';
+                
+                tbody.innerHTML += `
+                    <tr class="${bgClass} border-b border-slate-100 transition-colors">
+                        <td class="px-4 py-3"><span class="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-1 rounded text-xs">${h.broker}</span></td>
+                        <td class="px-4 py-3">
+                            <span class="bg-slate-50 text-slate-500 px-2 py-0.5 rounded text-xs border border-slate-200 mr-1">${acc}</span>
+                            <span class="bg-slate-50 text-slate-400 px-1.5 py-0.5 rounded text-[10px] border border-slate-200">${typeText}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="font-bold mr-2">${h.code}</span>
+                            <span class="text-xs text-slate-500">${h.name}</span>
+                        </td>
+                        <td class="px-4 py-3 text-right">${fmtNum.format(h.quantity)}</td>
+                        <td class="px-4 py-3 text-right">${fmtJpy.format(h.avgPrice)}</td>
+                        <td class="px-4 py-3 text-center space-x-2 whitespace-nowrap">
+                            <button onclick="editHolding('${h.id}')" class="text-blue-500 hover:text-blue-700 hover:bg-blue-100 p-1.5 rounded transition-colors" title="編集">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="confirmDelete('${h.id}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded transition-colors" title="削除">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function handleAddSubmit(e) {
+            e.preventDefault();
+            const broker = document.getElementById('add-broker').value;
+            const accountType = document.getElementById('add-account').value;
+            const type = document.getElementById('add-type').value;
+            const code = document.getElementById('add-code').value.toUpperCase();
+            const name = document.getElementById('add-name').value;
+            const quantity = parseFloat(document.getElementById('add-qty').value);
+            const avgPrice = parseFloat(document.getElementById('add-price').value);
+            
+            if (editTargetId) {
+                const index = holdings.findIndex(h => h.id === editTargetId);
+                if (index !== -1) {
+                    holdings[index] = { ...holdings[index], broker, accountType, type, code, name, quantity, avgPrice };
+                }
+                showMsg("更新完了", "データを更新しました。", "success");
+                cancelEdit();
+            } else {
+                const newId = "id_" + Date.now();
+                holdings.push({ id: newId, broker, accountType, type, code, name, quantity, avgPrice });
+                if(!marketPrices[code]) marketPrices[code] = avgPrice;
+                document.getElementById('add-form').reset();
+                showMsg("追加完了", `${broker} (${accountType}) の ${name} を追加しました。`, "success");
+            }
+            saveData();
+        }
+
+        function editHolding(id) {
+            const target = holdings.find(h => h.id === id);
+            if(!target) return;
+
+            editTargetId = id;
+            document.getElementById('add-broker').value = target.broker;
+            document.getElementById('add-account').value = target.accountType || '特定';
+            document.getElementById('add-type').value = target.type || 'JP';
+            document.getElementById('add-code').value = target.code;
+            document.getElementById('add-name').value = target.name;
+            document.getElementById('add-qty').value = target.quantity;
+            document.getElementById('add-price').value = target.avgPrice;
+
+            const btn = document.getElementById('add-submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> 更新';
+            btn.classList.replace('bg-primary', 'bg-emerald-600');
+            btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
+
+            document.getElementById('edit-cancel-btn').classList.remove('hidden');
+            document.getElementById('manage-form-title').innerHTML = `<span class="text-emerald-600"><i class="fa-solid fa-pen mr-2"></i>データの編集</span>`;
+            
+            document.getElementById('manage-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            renderManageTable();
+        }
+
+        function cancelEdit() {
+            editTargetId = null;
+            document.getElementById('add-form').reset();
+
+            const btn = document.getElementById('add-submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-plus mr-1"></i> 追加';
+            btn.classList.replace('bg-emerald-600', 'bg-primary');
+            btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
+
+            document.getElementById('edit-cancel-btn').classList.add('hidden');
+            document.getElementById('manage-form-title').innerText = "新規データの追加";
+            renderManageTable();
+        }
+
+        function confirmDelete(id) {
+            deleteTargetId = id;
+            const target = holdings.find(h => h.id === id);
+            if(!target) return;
+            
+            document.getElementById('delete-modal-text').innerHTML = `
+                以下のデータを削除します。<br>
+                <div class="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-sm font-medium">
+                    ${target.broker} [${target.accountType || '特定'}] : ${target.code} ${target.name} <br>
+                    数量: ${target.quantity}
+                </div>
+            `;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            deleteTargetId = null;
+        }
+
+        function executeDelete() {
+            if(deleteTargetId) {
+                if(deleteTargetId === editTargetId) cancelEdit();
+                holdings = holdings.filter(h => h.id !== deleteTargetId);
+                saveData();
+                closeDeleteModal();
+            }
+        }
+
+        function showBreakdown(code, accountType) {
+            const targetHoldings = holdings.filter(h => h.code === code && (h.accountType || '特定') === accountType);
+            
+            let html = '';
+            targetHoldings.forEach(h => {
+                html += `
+                    <div class="flex justify-between items-center py-3 border-b border-slate-100 last:border-0">
+                        <div>
+                            <div class="font-bold text-slate-700"><i class="fa-solid fa-building-columns text-slate-400 mr-2"></i>${h.broker}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm">数量: <span class="font-bold text-base">${fmtNum.format(h.quantity)}</span></div>
+                            <div class="text-xs text-slate-500">取得単価: ${fmtJpy.format(h.avgPrice)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('breakdown-content').innerHTML = html;
+            document.getElementById('breakdown-title').innerText = `${code} の内訳 (${accountType})`;
+            document.getElementById('breakdown-modal').classList.remove('hidden');
+        }
+
+        function closeBreakdownModal() {
+            document.getElementById('breakdown-modal').classList.add('hidden');
+        }
+
+        function updateBackupTextarea() {
+            document.getElementById('backup-data').value = JSON.stringify(holdings);
+        }
+
+        function copyBackup() {
+            const textarea = document.getElementById('backup-data');
+            textarea.select();
+            document.execCommand('copy');
+            showMsg("コピー完了", "クリップボードにバックアップデータをコピーしました。メモ帳などに貼り付けて保存してください。", "success");
+        }
+
+        function importBackup() {
+            const str = document.getElementById('import-data').value;
+            if(!str) return;
+            
+            try {
+                const parsed = JSON.parse(str);
+                if(Array.isArray(parsed)) {
+                    holdings = parsed;
+                    saveData();
+                    initPrices();
+                    document.getElementById('import-data').value = "";
+                    showMsg("復元成功", "データを復元しました。", "success");
+                } else {
+                    throw new Error("フォーマットエラー");
+                }
+            } catch(e) {
+                showMsg("エラー", "正しいJSONデータではありません。", "error");
+            }
+        }
+
+        function saveSettings() {
+            const finnhub = document.getElementById('api-key-finnhub').value;
+            const customUrl = document.getElementById('api-url-custom').value;
+            const fxRate = document.getElementById('setting-fx-rate').value;
+            
+            localStorage.setItem('api_key_finnhub', finnhub);
+            localStorage.setItem('api_url_custom', customUrl);
+            localStorage.setItem('setting_fx_rate', fxRate);
+            
+            const msg = document.getElementById('save-msg');
+            msg.style.opacity = 1;
+            setTimeout(() => { msg.style.opacity = 0; }, 3000);
+        }
+
+        function loadSettings() {
+            document.getElementById('api-key-finnhub').value = localStorage.getItem('api_key_finnhub') || '';
+            document.getElementById('api-url-custom').value = localStorage.getItem('api_url_custom') || '';
+            document.getElementById('setting-fx-rate').value = localStorage.getItem('setting_fx_rate') || '150.00';
+        }
+
+        function showMsg(title, text, type) {
+            document.getElementById('msg-modal-title').innerText = title;
+            document.getElementById('msg-modal-text').innerHTML = text;
+            
+            const icon = document.getElementById('msg-modal-icon');
+            if(type === 'success') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                icon.className = "text-4xl mb-4 text-emerald-500";
+            } else if (type === 'error') {
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                icon.className = "text-4xl mb-4 text-rose-500";
+            } else {
+                icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+                icon.className = "text-4xl mb-4 text-primary";
+            }
+            
+            document.getElementById('msg-modal').classList.remove('hidden');
+        }
+        function closeMsgModal() { document.getElementById('msg-modal').classList.add('hidden'); }
+
+    </script>
+</body>
+</html>
