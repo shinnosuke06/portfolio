@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>資産管理ポートフォリオ</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script>
@@ -37,7 +33,6 @@
 </head>
 <body class="flex h-[100dvh] overflow-hidden text-sm md:text-base">
 
-    <!-- サイドバー -->
     <aside class="w-16 md:w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm flex-shrink-0">
         <div class="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-200">
             <i class="fa-solid fa-chart-pie text-primary text-xl md:text-2xl mt-1 md:mt-0"></i>
@@ -63,7 +58,6 @@
         </nav>
     </aside>
 
-    <!-- メインコンテンツ -->
     <main class="flex-1 flex flex-col h-[100dvh] overflow-hidden relative">
         
         <header class="h-16 min-h-[4rem] flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white z-10 shadow-sm flex-shrink-0">
@@ -75,7 +69,6 @@
 
         <div id="content-area" class="flex-1 overflow-auto p-3 md:p-8 bg-slate-50 pb-8 md:pb-8">
             
-            <!-- ====== 1. ダッシュボード ====== -->
             <div id="view-dashboard" class="space-y-4 md:space-y-6 block max-w-7xl mx-auto">
                 <div class="flex justify-between items-center bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex items-center w-full">
@@ -134,7 +127,6 @@
                 </div>
             </div>
 
-            <!-- ====== 2. 保有資産一覧 ====== -->
             <div id="view-holdings" class="space-y-4 md:space-y-6 hidden max-w-7xl mx-auto">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4 bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex items-center w-full">
@@ -168,7 +160,6 @@
                 </div>
             </div>
 
-            <!-- ====== 3. データ管理 ====== -->
             <div id="view-manage" class="space-y-4 md:space-y-8 hidden max-w-7xl mx-auto">
                 
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm relative" id="manage-form-container">
@@ -269,7 +260,6 @@
                 </div>
             </div>
 
-            <!-- ====== 4. 設定 ====== -->
             <div id="view-settings" class="space-y-4 md:space-y-6 hidden max-w-3xl mx-auto">
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
                     <h2 class="text-base md:text-lg font-bold text-slate-800 mb-4 border-b pb-2">API連携・外部データ設定</h2>
@@ -289,9 +279,12 @@
                             <input type="text" id="api-url-custom" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-blue-200 rounded p-1.5 md:p-2 outline-none focus:border-primary text-[10px] md:text-sm font-mono transition-colors">
                         </div>
 
-                        <div class="bg-emerald-50 p-3 md:p-4 rounded-lg border border-emerald-100 mt-4">
-                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">3. 計算用 為替レート (USD/JPY)</h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-2 md:mb-3">米国株をFinnhubで取得した際、円に換算するためのレートを設定します。</p>
+                        <div class="bg-emerald-50 p-3 md:p-4 rounded-lg border border-emerald-100 mt-4 relative">
+                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2 flex items-center">
+                                3. 計算用 為替レート (USD/JPY)
+                                <span class="ml-2 bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">自動取得対応</span>
+                            </h3>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-2 md:mb-3">更新ボタンを押すと、最新のレートを自動で取得して保存します。</p>
                             <div class="flex items-center text-xs md:text-sm">
                                 <span class="mr-2 text-slate-700 font-bold">1ドル = </span>
                                 <input type="number" id="setting-fx-rate" step="0.01" placeholder="150" class="w-24 md:w-32 border border-slate-300 rounded p-1.5 md:p-2 outline-none focus:border-primary transition-colors text-right font-bold">
@@ -312,7 +305,6 @@
         </div>
     </main>
 
-    <!-- モーダル群 -->
     <div id="breakdown-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6 transform transition-all">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
@@ -423,10 +415,28 @@
 
             const icon = document.getElementById('refresh-icon');
             icon.classList.add('fa-spin');
+
+            // ======== 【追加】為替レートの自動取得 ========
+            let fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
+            try {
+                // 無料で登録不要の公開為替APIを利用
+                const fxRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                if (fxRes.ok) {
+                    const fxData = await fxRes.json();
+                    if (fxData && fxData.rates && fxData.rates.JPY) {
+                        fxRate = fxData.rates.JPY;
+                        // 設定画面の入力欄も自動で書き換えて保存
+                        document.getElementById('setting-fx-rate').value = fxRate.toFixed(2);
+                        localStorage.setItem('setting_fx_rate', fxRate.toFixed(2));
+                    }
+                }
+            } catch(e) {
+                console.warn("為替の取得に失敗しました。前回保存されたレートを使用します。");
+            }
+            // ===============================================
             
             const finnhubKey = localStorage.getItem('api_key_finnhub');
             const customUrl = localStorage.getItem('api_url_custom');
-            const fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
             
             const uniqueHoldings = [];
             holdings.forEach(h => {
