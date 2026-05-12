@@ -3,12 +3,12 @@
   "short_name": "資産管理",
   "icons": [
     {
-      "src": "bank.png",
+      "src": "money.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "bank.png",
+      "src": "money.png",
       "sizes": "512x512",
       "type": "image/png"
     }
