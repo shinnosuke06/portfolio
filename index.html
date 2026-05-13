@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>資産管理ポートフォリオ</title>
     
-    <!-- 追加いただいたPWA用メタタグ -->
+    <!-- PWA用のメタタグ -->
     <link rel="apple-touch-icon" href="money.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-title" content="資産管理">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <title>資産管理ポートフォリオ</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,7 +45,13 @@
         .tab-inactive:hover { background-color: #f8fafc; color: #334155; }
     </style>
 </head>
-<body class="flex h-[100dvh] overflow-hidden text-sm md:text-base">
+<body class="flex h-[100dvh] overflow-hidden text-sm md:text-base relative">
+
+    <!-- トースト通知 (OKボタン不要のスマート通知) -->
+    <div id="toast-notification" class="fixed top-6 left-1/2 transform -translate-x-1/2 -translate-y-32 opacity-0 transition-all duration-300 z-[100] flex items-center shadow-xl rounded-full px-5 py-3 text-sm md:text-base font-bold pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-notch fa-spin mr-3 text-lg"></i>
+        <span id="toast-message">更新中...</span>
+    </div>
 
     <!-- サイドバー -->
     <aside class="w-16 md:w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm flex-shrink-0">
@@ -77,7 +84,7 @@
         
         <header class="h-16 min-h-[4rem] flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white z-10 shadow-sm flex-shrink-0">
             <h1 id="page-title" class="text-lg md:text-xl font-bold text-slate-800 truncate pr-2">ダッシュボード</h1>
-            <button onclick="refreshPrices()" class="p-2 md:px-4 rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center border border-slate-200 shadow-sm flex-shrink-0" title="一括で現在値を更新">
+            <button onclick="refreshPrices()" id="refresh-btn" class="p-2 md:px-4 rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center border border-slate-200 shadow-sm flex-shrink-0">
                 <i id="refresh-icon" class="fa-solid fa-rotate-right md:mr-2"></i> <span class="hidden md:inline font-medium">価格自動取得</span>
             </button>
         </header>
@@ -96,23 +103,20 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    <!-- 総資産カード -->
-                    <div class="bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-center">
+                    <div class="bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm relative overflow-hidden">
                         <div class="absolute -right-4 -top-4 text-slate-100"><i class="fa-solid fa-wallet text-8xl"></i></div>
                         <h2 class="text-slate-500 text-xs md:text-sm font-medium mb-1 relative z-10">総資産額</h2>
                         <div class="text-2xl md:text-3xl font-bold text-slate-800 mb-2 relative z-10" id="dash-total-assets">¥0</div>
                         
-                        <!-- 評価損益と前回更新からの変動を並べて表示 -->
-                        <div class="space-y-1.5 mt-1 relative z-10">
+                        <div class="flex flex-col space-y-1.5 relative z-10 mt-2">
                             <div class="flex items-center text-xs md:text-sm">
                                 <span id="dash-total-profit" class="font-medium flex items-center">¥0 (0.00%)</span>
-                                <span class="text-slate-500 ml-2">総評価損益</span>
+                                <span class="text-slate-500 ml-2">評価損益</span>
                             </div>
+                            <!-- 追加: 前回更新からの増減 -->
                             <div class="flex items-center text-xs md:text-sm">
-                                <span id="dash-recent-diff" class="font-medium flex items-center bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
-                                    --
-                                </span>
-                                <span class="text-slate-500 ml-2">前回更新からの変動</span>
+                                <span id="dash-diff-prev" class="font-medium flex items-center text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">--</span>
+                                <span class="text-slate-500 ml-2">前回更新比</span>
                             </div>
                         </div>
                     </div>
@@ -139,7 +143,7 @@
                     
                     <div class="bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm flex flex-col">
                         <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-slate-500 text-xs md:text-sm font-medium">資産推移 (実データ)</h2>
+                            <h2 class="text-slate-500 text-xs md:text-sm font-medium">実際の資産推移</h2>
                             <select id="dash-history-period" onchange="renderDashboard()" class="bg-slate-50 border border-slate-300 text-slate-700 text-[10px] md:text-xs rounded-md p-1 outline-none cursor-pointer">
                                 <option value="7d">1週間</option>
                                 <option value="1m">1ヶ月</option>
@@ -270,7 +274,7 @@
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h2 class="text-base md:text-lg font-bold text-slate-800">バックアップ・復元</h2>
                     </div>
-                    <p class="text-xs md:text-sm text-slate-600 mb-4">データが消えた時に備えて、以下の文字（JSONデータ）をコピーしてメモ帳などに保存してください。</p>
+                    <p class="text-xs md:text-sm text-slate-600 mb-4">保有銘柄や取得した株価、グラフの推移履歴がすべて文字（JSON）になります。コピーしてメモ帳などに保存してください。</p>
                     
                     <div class="relative">
                         <textarea id="backup-data" class="w-full h-24 md:h-32 p-2 md:p-3 text-[10px] md:text-xs font-mono bg-slate-50 border border-slate-300 rounded outline-none focus:border-primary" readonly></textarea>
@@ -335,18 +339,7 @@
         </div>
     </main>
 
-    <!-- モーダル群 -->
-    <div id="breakdown-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6 transform transition-all">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 class="text-base md:text-lg font-bold text-slate-800" id="breakdown-title">内訳</h3>
-                <button onclick="closeBreakdownModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
-            <div id="breakdown-content" class="space-y-1 mb-6 max-h-[50vh] overflow-y-auto pr-2"></div>
-            <button onclick="closeBreakdownModal()" class="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 font-medium transition-colors text-sm">閉じる</button>
-        </div>
-    </div>
-
+    <!-- 削除確認モーダル等 -->
     <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-4 md:p-6 transform transition-all">
             <h3 class="text-base md:text-lg font-bold text-slate-800 mb-2">データの削除</h3>
@@ -358,12 +351,15 @@
         </div>
     </div>
 
-    <div id="msg-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6 text-center transform transition-all">
-            <div id="msg-modal-icon" class="text-3xl md:text-4xl mb-3 md:mb-4 text-primary"><i class="fa-solid fa-circle-info"></i></div>
-            <h3 class="text-base md:text-lg font-bold text-slate-800 mb-2" id="msg-modal-title">通知</h3>
-            <div class="text-slate-600 mb-6 text-xs md:text-sm overflow-y-auto max-h-40 text-left bg-slate-50 p-3 rounded border border-slate-100" id="msg-modal-text">メッセージ</div>
-            <button onclick="closeMsgModal()" class="w-full px-4 py-2 bg-primary text-white rounded hover:bg-blue-700 font-medium transition-colors shadow-sm text-sm">OK</button>
+    <!-- 内訳モーダル -->
+    <div id="breakdown-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6 transform transition-all">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-base md:text-lg font-bold text-slate-800" id="breakdown-title">内訳</h3>
+                <button onclick="closeBreakdownModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="breakdown-content" class="space-y-1 mb-6 max-h-[50vh] overflow-y-auto pr-2"></div>
+            <button onclick="closeBreakdownModal()" class="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 font-medium transition-colors text-sm">閉じる</button>
         </div>
     </div>
 
@@ -371,20 +367,18 @@
         const fmtJpy = new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 });
         const fmtNum = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 4 });
         
+        // --- 状態管理 ---
         let holdings = [];
         let marketPrices = {};
-        // 実データの履歴配列 { date: "YYYY/MM/DD", value: 10000 }
-        let assetHistory = []; 
-        let lastTotalAsset = null; // 前回更新時の総資産額
+        let historyData = [];
+        let lastTotalAsset = 0;
         
         let charts = { broker: null, type: null, history: null };
         let deleteTargetId = null; 
         let editTargetId = null;   
-        let refreshTimestamps = []; 
 
         const DEFAULT_DATA = [
             { id: "1", broker: "SBI証券", code: "7203", name: "トヨタ自動車", quantity: 100, avgPrice: 3000, type: "JP", accountType: "特定" },
-            { id: "2", broker: "楽天証券", code: "7203", name: "トヨタ自動車", quantity: 200, avgPrice: 2800, type: "JP", accountType: "特定" },
             { id: "4", broker: "マネックス証券", code: "AAPL", name: "Apple Inc.", quantity: 20, avgPrice: 25000, type: "US", accountType: "一般" }, 
             { id: "5", broker: "楽天証券", code: "0331418A", name: "eMAXIS Slim 米国株式(S&P500)", quantity: 2.5, avgPrice: 28000, type: "FUND", accountType: "NISA" }
         ];
@@ -401,71 +395,117 @@
             Chart.defaults.plugins.tooltip.padding = 10;
         };
 
-        function loadData() {
-            const saved = localStorage.getItem('myportfolio_data');
-            const savedHistory = localStorage.getItem('myportfolio_history');
-            const savedLastTotal = localStorage.getItem('myportfolio_last_total');
-
-            if (saved) {
-                try {
-                    holdings = JSON.parse(saved);
-                    holdings = holdings.map(h => ({ 
-                        ...h, 
-                        accountType: h.accountType || "特定",
-                        type: h.type || (h.code.match(/^[A-Z]/) ? 'US' : 'JP')
-                    }));
-                } catch(e) {
-                    holdings = [...DEFAULT_DATA];
-                }
+        // --- スマート通知 (トースト) ---
+        let toastTimeout;
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast-notification');
+            const icon = document.getElementById('toast-icon');
+            const msgEl = document.getElementById('toast-message');
+            
+            clearTimeout(toastTimeout);
+            msgEl.innerHTML = msg;
+            
+            // 一旦クラスをリセットして表示状態へ
+            toast.className = "fixed top-6 left-1/2 transform -translate-x-1/2 transition-all duration-300 z-[100] flex items-center shadow-xl px-5 py-3 text-sm md:text-base font-bold pointer-events-none translate-y-0 opacity-100";
+            
+            if (type === 'success') {
+                toast.classList.add('bg-emerald-600', 'text-white', 'rounded-full');
+                icon.className = "fa-solid fa-circle-check mr-3 text-lg";
+            } else if (type === 'warning' || type === 'error') {
+                toast.classList.add('bg-rose-600', 'text-white', 'rounded-xl');
+                icon.className = "fa-solid fa-triangle-exclamation mr-3 text-lg";
             } else {
-                holdings = [...DEFAULT_DATA];
+                toast.classList.add('bg-slate-800', 'text-white', 'rounded-full');
+                icon.className = "fa-solid fa-circle-notch fa-spin mr-3 text-lg";
             }
-
-            // 履歴と前回総資産の読み込み
-            if (savedHistory) {
-                try { assetHistory = JSON.parse(savedHistory); } catch(e) { assetHistory = []; }
+            
+            // ロード中以外は自動で隠す
+            if (type !== 'info') {
+                toastTimeout = setTimeout(() => {
+                    toast.classList.replace('translate-y-0', '-translate-y-32');
+                    toast.classList.replace('opacity-100', 'opacity-0');
+                }, type === 'warning' ? 4000 : 3000);
             }
-            if (savedLastTotal) {
-                lastTotalAsset = parseFloat(savedLastTotal);
-            }
-
-            updateBrokerFilterOptions();
-            updateBackupTextarea();
         }
 
-        function saveData() {
-            localStorage.setItem('myportfolio_data', JSON.stringify(holdings));
-            localStorage.setItem('myportfolio_history', JSON.stringify(assetHistory));
-            if(lastTotalAsset !== null) {
-                localStorage.setItem('myportfolio_last_total', lastTotalAsset.toString());
+        // --- データの読み書き ---
+        function loadData() {
+            const savedApp = localStorage.getItem('myportfolio_app_data');
+            if (savedApp) {
+                try {
+                    const parsed = JSON.parse(savedApp);
+                    holdings = parsed.holdings || [];
+                    historyData = parsed.history || [];
+                    marketPrices = parsed.prices || {};
+                    lastTotalAsset = parsed.lastTotal || 0;
+                } catch(e) {
+                    fallbackLoad();
+                }
+            } else {
+                fallbackLoad();
             }
+            
+            holdings = holdings.map(h => ({ 
+                ...h, 
+                accountType: h.accountType || "特定",
+                type: h.type || (h.code.match(/^[A-Z]/) ? 'US' : 'JP')
+            }));
             
             updateBrokerFilterOptions();
             updateBackupTextarea();
-            updateAllViews();
+        }
+
+        function fallbackLoad() {
+            const oldSaved = localStorage.getItem('myportfolio_data');
+            if (oldSaved) {
+                holdings = JSON.parse(oldSaved);
+            } else {
+                holdings = [...DEFAULT_DATA];
+            }
+        }
+
+        function saveData() {
+            const appData = {
+                holdings: holdings,
+                history: historyData,
+                prices: marketPrices,
+                lastTotal: lastTotalAsset
+            };
+            localStorage.setItem('myportfolio_app_data', JSON.stringify(appData));
+            updateBrokerFilterOptions();
+            updateBackupTextarea();
         }
 
         function initPrices() {
+            // モック(ランダム変動)を廃止。保存された価格がなければ取得単価を初期値にする
             holdings.forEach(h => {
                 if (!marketPrices[h.code]) {
-                    const ratio = 0.9 + (Math.random() * 0.2); 
-                    marketPrices[h.code] = Math.round(h.avgPrice * ratio);
+                    marketPrices[h.code] = h.avgPrice;
                 }
             });
         }
 
-        async function refreshPrices() {
-            const now = Date.now();
-            refreshTimestamps = refreshTimestamps.filter(t => now - t < 60000);
-            
-            if (refreshTimestamps.length >= 5) {
-                showMsg("制限に達しました", "1分間に5回を超える更新はできません。<br>1分後に再度実施お願いいたします。", "error");
-                return;
-            }
-            refreshTimestamps.push(now);
+        function calcTotalAssets() {
+            let total = 0;
+            holdings.forEach(h => {
+                const p = marketPrices[h.code] || h.avgPrice;
+                total += p * h.quantity;
+            });
+            return total;
+        }
 
+        // --- メイン取得処理 ---
+        async function refreshPrices() {
             const icon = document.getElementById('refresh-icon');
+            const btn = document.getElementById('refresh-btn');
+            
+            btn.classList.add('pointer-events-none', 'opacity-70');
             icon.classList.add('fa-spin');
+            
+            showToast("最新価格を取得中..."); // モーダルの代わりにトースト表示
+            
+            // 更新前の総資産額を記録（前回比のため）
+            const oldTotal = calcTotalAssets();
 
             // 為替レートの自動取得
             let fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
@@ -479,19 +519,11 @@
                         localStorage.setItem('setting_fx_rate', fxRate.toFixed(2));
                     }
                 }
-            } catch(e) {
-                console.warn("為替の取得に失敗しました。前回保存されたレートを使用します。");
-            }
+            } catch(e) {}
             
             const finnhubKey = localStorage.getItem('api_key_finnhub');
             const customUrl = localStorage.getItem('api_url_custom');
             
-            // 現在の総資産を「前回分」として保存（取得が成功した場合に備えて）
-            let currentTotalBeforeRefresh = calculateCurrentTotalAssets();
-            if(currentTotalBeforeRefresh > 0) {
-                lastTotalAsset = currentTotalBeforeRefresh;
-            }
-
             const uniqueHoldings = [];
             holdings.forEach(h => {
                 if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) {
@@ -501,6 +533,7 @@
 
             const failedCodes = [];
             
+            // 米国株
             const usHoldings = uniqueHoldings.filter(h => h.type === 'US');
             if (usHoldings.length > 0) {
                 if (!finnhubKey) {
@@ -511,21 +544,15 @@
                             const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${h.code}&token=${finnhubKey}`);
                             if(res.ok) {
                                 const data = await res.json();
-                                if(data.c && data.c > 0) {
-                                    marketPrices[h.code] = data.c * fxRate;
-                                } else {
-                                    failedCodes.push(h.code);
-                                }
-                            } else {
-                                failedCodes.push(h.code);
-                            }
-                        } catch(e) {
-                            failedCodes.push(h.code);
-                        }
+                                if(data.c && data.c > 0) marketPrices[h.code] = data.c * fxRate;
+                                else failedCodes.push(h.code);
+                            } else failedCodes.push(h.code);
+                        } catch(e) { failedCodes.push(h.code); }
                     }));
                 }
             }
 
+            // 日本株・投資信託 (GAS連携)
             const jpFundHoldings = uniqueHoldings.filter(h => h.type === 'JP' || h.type === 'FUND');
             if (jpFundHoldings.length > 0) {
                 if (!customUrl) {
@@ -537,73 +564,49 @@
                         const res = await fetch(url);
                         if(res.ok) {
                             const data = await res.json();
-                            
-                            if(data.error) {
-                                showMsg("GASエラー", `ロボットがエラーを返しました。<br>${data.detail || data.error}`, "error");
-                                icon.classList.remove('fa-spin');
-                                return;
-                            }
-                            
                             if(data.results) {
-                                Object.keys(data.results).forEach(code => {
-                                    marketPrices[code] = data.results[code];
-                                });
+                                Object.keys(data.results).forEach(code => marketPrices[code] = data.results[code]);
                             }
                             if(data.errors && data.errors.length > 0) {
-                                data.errors.forEach(code => {
-                                    const reason = data.errorDetails && data.errorDetails[code] ? ` <span class="text-[10px] text-slate-400">(${data.errorDetails[code]})</span>` : '';
-                                    failedCodes.push(`${code}${reason}`);
-                                });
+                                data.errors.forEach(code => failedCodes.push(code));
                             }
                         } else {
-                            jpFundHoldings.forEach(h => failedCodes.push(`${h.code} (通信失敗)`));
+                            jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(失敗)`));
                         }
                     } catch(e) {
-                        jpFundHoldings.forEach(h => failedCodes.push(`${h.code} (ネットワークエラー)`));
+                        jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(通信エラー)`));
                     }
                 }
             }
 
-            // 取得成功後に履歴に書き込む処理
-            const newTotal = calculateCurrentTotalAssets();
-            if (newTotal > 0) {
-                recordAssetHistory(newTotal);
-            }
-
-            saveData(); 
-            icon.classList.remove('fa-spin');
-
-            if (failedCodes.length > 0) {
-                showMsg("更新完了 (一部失敗)", `一部の項目の情報が取得できませんでした。<br><br><span class="text-rose-600 font-bold">失敗した項目:</span><br>${failedCodes.join('<br>')}`, "error");
-            }
-        }
-
-        function calculateCurrentTotalAssets() {
-            let total = 0;
-            holdings.forEach(h => {
-                const price = marketPrices[h.code] || h.avgPrice;
-                total += price * h.quantity;
-            });
-            return total;
-        }
-
-        function recordAssetHistory(totalValue) {
+            // ===== 更新後の履歴保存処理 =====
+            const newTotal = calcTotalAssets();
+            lastTotalAsset = oldTotal; // 更新前を「前回」として記録
+            
             const today = new Date();
-            const dateStr = today.getFullYear() + '/' + (today.getMonth() + 1) + '/' + today.getDate();
-            
-            const existingIndex = assetHistory.findIndex(h => h.date === dateStr);
-            if (existingIndex !== -1) {
-                assetHistory[existingIndex].value = totalValue;
+            const dateStr = today.getFullYear() + '/' + (today.getMonth()+1) + '/' + today.getDate();
+            const existingIdx = historyData.findIndex(d => d.date === dateStr);
+            if (existingIdx >= 0) {
+                historyData[existingIdx].value = newTotal; // 今日2回目なら上書き
             } else {
-                assetHistory.push({ date: dateStr, value: totalValue });
+                historyData.push({ date: dateStr, value: newTotal }); // 初めてなら追加
             }
             
-            // 過去1000日分まで保持
-            if(assetHistory.length > 1000) {
-                assetHistory.shift(); 
+            saveData();
+            updateAllViews();
+
+            icon.classList.remove('fa-spin');
+            btn.classList.remove('pointer-events-none', 'opacity-70');
+
+            // モーダルを廃止し、結果もトーストで知らせる
+            if (failedCodes.length > 0) {
+                showToast(`一部取得失敗<br><span class="text-[11px] font-normal">失敗: ${failedCodes.slice(0,3).join(', ')}${failedCodes.length > 3 ? '...' : ''}</span>`, 'warning');
+            } else {
+                showToast("最新価格の更新が完了しました！", 'success');
             }
         }
 
+        // --- タブ切り替え ---
         function switchTab(tabId) {
             const titles = { 'dashboard': 'ダッシュボード', 'holdings': '保有資産一覧', 'manage': 'データ管理', 'settings': '設定' };
             document.getElementById('page-title').innerText = titles[tabId];
@@ -628,22 +631,17 @@
         function calcNetValue(currentValue, costValue, accountType) {
             if (accountType === 'NISA') return currentValue;
             const profit = currentValue - costValue;
-            if (profit > 0) {
-                return currentValue - (profit * 0.20315);
-            }
+            if (profit > 0) return currentValue - (profit * 0.20315);
             return currentValue;
         }
 
         function getAggregatedData(brokerFilter) {
             let targetData = holdings;
-            if (brokerFilter !== 'ALL') {
-                targetData = holdings.filter(h => h.broker === brokerFilter);
-            }
+            if (brokerFilter !== 'ALL') targetData = holdings.filter(h => h.broker === brokerFilter);
 
             if (brokerFilter !== 'ALL') {
                 return targetData.map(h => ({
-                    ...h,
-                    isAggregated: false,
+                    ...h, isAggregated: false,
                     currentPrice: marketPrices[h.code] || h.avgPrice,
                     currentValue: (marketPrices[h.code] || h.avgPrice) * h.quantity,
                     costValue: h.avgPrice * h.quantity
@@ -658,9 +656,7 @@
                         brokers: [h.broker], code: h.code, name: h.name, type: h.type,
                         accountType: h.accountType || '特定', quantity: 0, totalCost: 0 
                     };
-                } else if (!aggregated[key].brokers.includes(h.broker)) {
-                    aggregated[key].brokers.push(h.broker);
-                }
+                } else if (!aggregated[key].brokers.includes(h.broker)) aggregated[key].brokers.push(h.broker);
                 aggregated[key].quantity += h.quantity;
                 aggregated[key].totalCost += (h.avgPrice * h.quantity);
             });
@@ -669,43 +665,25 @@
                 const avgPrice = a.totalCost / a.quantity;
                 const currentPrice = marketPrices[a.code] || avgPrice;
                 const isAggregated = a.brokers.length > 1;
-                const brokerDisplay = isAggregated ? "複数 (合算)" : a.brokers[0];
-                
                 return {
-                    broker: brokerDisplay,
-                    isAggregated: isAggregated,
-                    code: a.code,
-                    name: a.name,
-                    type: a.type,
-                    accountType: a.accountType,
-                    quantity: a.quantity,
-                    avgPrice: avgPrice,
-                    currentPrice: currentPrice,
-                    currentValue: currentPrice * a.quantity,
-                    costValue: a.totalCost
+                    broker: isAggregated ? "複数 (合算)" : a.brokers[0], isAggregated: isAggregated,
+                    code: a.code, name: a.name, type: a.type, accountType: a.accountType,
+                    quantity: a.quantity, avgPrice: avgPrice, currentPrice: currentPrice,
+                    currentValue: currentPrice * a.quantity, costValue: a.totalCost
                 };
             });
         }
 
         function updateBrokerFilterOptions() {
             const brokers = [...new Set(holdings.map(h => h.broker))];
-            
             ['dash-broker-filter', 'broker-filter', 'manage-broker-filter'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) {
                     const currentVal = el.value;
-                    let html = '';
-                    if(id === 'manage-broker-filter') {
-                        html = `<option value="ALL">全て</option>`;
-                    } else {
-                        html = `<option value="ALL">全体 (合算)</option>`;
-                    }
+                    let html = id === 'manage-broker-filter' ? `<option value="ALL">全ての証券会社</option>` : `<option value="ALL">全体 (合算)</option>`;
                     brokers.forEach(b => html += `<option value="${b}">${b}</option>`);
                     el.innerHTML = html;
-                    
-                    if(brokers.includes(currentVal) || currentVal === 'ALL') {
-                        el.value = currentVal;
-                    }
+                    if(brokers.includes(currentVal) || currentVal === 'ALL') el.value = currentVal;
                 }
             });
         }
@@ -714,11 +692,8 @@
             const dashFilter = document.getElementById('dash-broker-filter').value;
             const allData = getAggregatedData(dashFilter);
             
-            let totalVal = 0;
-            let totalCost = 0;
-            
-            const brokerTotals = {};
-            const brokerCosts = {};
+            let totalVal = 0, totalCost = 0;
+            const brokerTotals = {}, brokerCosts = {};
             const typeTotals = { 'JP': 0, 'US': 0, 'FUND': 0, 'OTHER': 0 };
 
             let targetHoldings = dashFilter === 'ALL' ? holdings : holdings.filter(h => h.broker === dashFilter);
@@ -728,97 +703,87 @@
                 const cost = h.avgPrice * h.quantity;
                 
                 if(!brokerTotals[h.broker]) { brokerTotals[h.broker] = 0; brokerCosts[h.broker] = 0; }
-                brokerTotals[h.broker] += val;
-                brokerCosts[h.broker] += cost;
+                brokerTotals[h.broker] += val; brokerCosts[h.broker] += cost;
                 
                 const type = h.type || 'OTHER';
                 if(typeTotals[type] === undefined) typeTotals[type] = 0;
                 typeTotals[type] += val;
             });
 
-            allData.forEach(d => {
-                totalVal += d.currentValue;
-                totalCost += d.costValue;
-            });
+            allData.forEach(d => { totalVal += d.currentValue; totalCost += d.costValue; });
 
-            const profit = totalVal - totalCost;
-            const profitPct = totalCost > 0 ? (profit / totalCost) * 100 : 0;
-
+            // 総資産表示
             document.getElementById('dash-total-assets').innerText = fmtJpy.format(totalVal);
             
+            // 評価損益
+            const profit = totalVal - totalCost;
+            const profitPct = totalCost > 0 ? (profit / totalCost) * 100 : 0;
             const pEl = document.getElementById('dash-total-profit');
             if (profit >= 0) {
-                pEl.className = "text-emerald-600 bg-emerald-50 px-2 py-1 rounded font-bold border border-emerald-200 flex items-center";
+                pEl.className = "text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-200 flex items-center";
                 pEl.innerHTML = `<i class="fa-solid fa-arrow-up mr-1 text-xs md:text-sm"></i> +${fmtJpy.format(profit)} (+${profitPct.toFixed(2)}%)`;
             } else {
-                pEl.className = "text-rose-600 bg-rose-50 px-2 py-1 rounded font-bold border border-rose-200 flex items-center";
+                pEl.className = "text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-bold border border-rose-200 flex items-center";
                 pEl.innerHTML = `<i class="fa-solid fa-arrow-down mr-1 text-xs md:text-sm"></i> ${fmtJpy.format(profit)} (${profitPct.toFixed(2)}%)`;
             }
 
-            const diffEl = document.getElementById('dash-recent-diff');
-            if (lastTotalAsset && lastTotalAsset > 0) {
-                const diff = totalVal - lastTotalAsset;
-                if (diff === 0) {
-                    diffEl.className = "font-medium flex items-center bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200";
-                    diffEl.innerHTML = `±0`;
-                } else if (diff > 0) {
-                    diffEl.className = "font-medium flex items-center bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-200";
-                    diffEl.innerHTML = `<i class="fa-solid fa-caret-up mr-1"></i> +${fmtJpy.format(diff)}`;
-                } else {
-                    diffEl.className = "font-medium flex items-center bg-rose-50 text-rose-600 px-2 py-0.5 rounded border border-rose-200";
-                    diffEl.innerHTML = `<i class="fa-solid fa-caret-down mr-1"></i> ${fmtJpy.format(diff)}`;
-                }
+            // 前回比表示の更新
+            const prevDiff = totalVal - lastTotalAsset;
+            const prevDiffEl = document.getElementById('dash-diff-prev');
+            if (lastTotalAsset === 0 || lastTotalAsset === totalVal) {
+                prevDiffEl.innerHTML = `<span class="text-slate-500 font-bold">変動なし</span>`;
+            } else if (prevDiff > 0) {
+                prevDiffEl.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-arrow-up text-xs mr-1"></i>+${fmtJpy.format(prevDiff)}</span>`;
             } else {
-                diffEl.className = "font-medium flex items-center bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200";
-                diffEl.innerHTML = `--`;
+                prevDiffEl.innerHTML = `<span class="text-rose-600 font-bold"><i class="fa-solid fa-arrow-down text-xs mr-1"></i>${fmtJpy.format(prevDiff)}</span>`;
             }
 
             renderDashBrokerList(brokerTotals, brokerCosts);
 
+            // 履歴グラフのフィルタリングと描画
             const historyPeriod = document.getElementById('dash-history-period').value || '7d';
-            const filteredHistory = filterHistoryByPeriod(assetHistory, historyPeriod);
-            
-            if (filteredHistory.length === 0) {
-                const today = new Date();
-                filteredHistory.push({ 
-                    date: today.getFullYear() + '/' + (today.getMonth() + 1) + '/' + today.getDate(), 
-                    value: totalVal 
-                });
-            }
-
+            const filteredHistory = filterHistoryData(historyData, historyPeriod);
             drawCharts(brokerTotals, typeTotals, filteredHistory);
         }
 
-        function filterHistoryByPeriod(historyArray, period) {
-            if (!historyArray || historyArray.length === 0) return [];
-            
+        function filterHistoryData(data, period) {
+            if (!data || data.length === 0) {
+                const today = new Date();
+                const d = today.getFullYear() + '/' + (today.getMonth()+1) + '/' + today.getDate();
+                return [{ date: d, value: calcTotalAssets() }];
+            }
             let days = 7;
             if(period === '1m') days = 30;
             if(period === '1y') days = 365;
-            if(period === 'all') return historyArray;
-
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - days);
-            cutoffDate.setHours(0,0,0,0);
-
-            return historyArray.filter(item => {
-                const itemDate = new Date(item.date);
-                return itemDate >= cutoffDate;
+            if(period === 'all') days = 9999;
+            
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - days);
+            
+            let filtered = data.filter(d => {
+                const [y, m, day] = d.date.split('/');
+                const dateObj = new Date(y, m-1, day);
+                return dateObj >= cutoff;
             });
+            
+            // データが1件だけだとグラフが点になるため、見た目上、前日に同額データを入れる
+            if (filtered.length === 1) {
+                const [y, m, day] = filtered[0].date.split('/');
+                const prev = new Date(y, m-1, day);
+                prev.setDate(prev.getDate() - 1);
+                const prevStr = prev.getFullYear() + '/' + (prev.getMonth()+1) + '/' + prev.getDate();
+                filtered = [{ date: prevStr, value: filtered[0].value }, filtered[0]];
+            }
+            return filtered;
         }
 
         function renderDashBrokerList(totals, costs) {
             const listEl = document.getElementById('dash-broker-list');
             listEl.innerHTML = '';
-            
             const sortedBrokers = Object.keys(totals).sort((a, b) => totals[b] - totals[a]);
-            
             sortedBrokers.forEach(broker => {
-                const val = totals[broker];
-                const cost = costs[broker];
-                const pl = val - cost;
-                const plPct = cost > 0 ? (pl/cost)*100 : 0;
-                
+                const val = totals[broker], cost = costs[broker];
+                const pl = val - cost, plPct = cost > 0 ? (pl/cost)*100 : 0;
                 let plHtml = pl >= 0 
                     ? `<span class="text-emerald-600 text-[10px] md:text-xs font-bold">+${fmtJpy.format(pl)} (+${plPct.toFixed(2)}%)</span>`
                     : `<span class="text-rose-600 text-[10px] md:text-xs font-bold">${fmtJpy.format(pl)} (${plPct.toFixed(2)}%)</span>`;
@@ -833,10 +798,7 @@
                     </div>
                 `;
             });
-            
-            if(sortedBrokers.length === 0) {
-                listEl.innerHTML = '<p class="text-slate-500 text-xs md:text-sm mt-4 text-center">データがありません</p>';
-            }
+            if(sortedBrokers.length === 0) listEl.innerHTML = '<p class="text-slate-500 text-xs md:text-sm mt-4 text-center">データがありません</p>';
         }
 
         function drawCharts(brokerData, typeData, historyData) {
@@ -845,10 +807,7 @@
             if(charts.broker) charts.broker.destroy();
             charts.broker = new Chart(document.getElementById('brokerChart').getContext('2d'), {
                 type: 'doughnut',
-                data: {
-                    labels: Object.keys(brokerData),
-                    datasets: [{ data: Object.values(brokerData), backgroundColor: bgColors, borderWidth: 0 }]
-                },
+                data: { labels: Object.keys(brokerData), datasets: [{ data: Object.values(brokerData), backgroundColor: bgColors, borderWidth: 0 }] },
                 options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 10, font: {size: 10}} } } }
             });
 
@@ -857,123 +816,72 @@
                 type: 'doughnut',
                 data: {
                     labels: ['国内株', '米国株', '投資信託', 'その他'],
-                    datasets: [{ 
-                        data: [typeData['JP']||0, typeData['US']||0, typeData['FUND']||0, typeData['OTHER']||0], 
-                        backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#94a3b8'], 
-                        borderWidth: 0 
-                    }]
+                    datasets: [{ data: [typeData['JP']||0, typeData['US']||0, typeData['FUND']||0, typeData['OTHER']||0], backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#94a3b8'], borderWidth: 0 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 10, font: {size: 10}} } } }
             });
 
             if(charts.history) charts.history.destroy();
-            
-            const formattedLabels = historyData.map(d => {
-                const parts = d.date.split('/');
-                if(parts.length === 3) {
-                    return `${parts[1]}/${parts[2]}`;
-                }
-                return d.date;
-            });
-
             charts.history = new Chart(document.getElementById('historyChart').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: formattedLabels,
+                    labels: historyData.map(d => d.date),
                     datasets: [{
-                        label: '総資産推移',
-                        data: historyData.map(d => d.value),
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3, pointHoverRadius: 5
+                        label: '総資産推移', data: historyData.map(d => d.value),
+                        borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true, tension: 0.1, borderWidth: 2, pointRadius: 3, pointHoverRadius: 5
                     }]
                 },
                 options: { 
                     responsive: true, maintainAspectRatio: false, 
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: (ctx) => fmtJpy.format(ctx.raw) } }
-                    },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => fmtJpy.format(ctx.raw) } } },
                     scales: {
-                        y: { 
-                            ticks: { callback: v => (v/10000).toFixed(0) + '万', font: {size: 10} }, 
-                            grid: { display: false },
-                            suggestedMin: Math.min(...historyData.map(d => d.value)) * 0.95,
-                            suggestedMax: Math.max(...historyData.map(d => d.value)) * 1.05
-                        },
-                        x: { ticks: { font: {size: 10}, maxTicksLimit: 10 }, grid: { display: false } }
+                        y: { ticks: { callback: v => (v/10000).toFixed(0) + '万', font: {size: 10} }, grid: { display: false } },
+                        x: { ticks: { font: {size: 10} }, grid: { display: false } }
                     }
                 }
             });
         }
 
+        // --- テーブル描画・データ操作 ---
         function renderHoldingsTable() {
             const filter = document.getElementById('broker-filter').value;
             const data = getAggregatedData(filter);
-            
             const tbody = document.getElementById('holdings-tbody');
             const tfoot = document.getElementById('holdings-tfoot');
             tbody.innerHTML = '';
             
-            let sumVal = 0;
-            let sumCost = 0;
-            let sumNet = 0;
-
+            let sumVal = 0, sumCost = 0, sumNet = 0;
             if (data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-slate-500">データがありません。</td></tr>`;
-                tfoot.innerHTML = '';
-                return;
+                tfoot.innerHTML = ''; return;
             }
 
             data.forEach(row => {
                 const netVal = calcNetValue(row.currentValue, row.costValue, row.accountType);
-                sumVal += row.currentValue;
-                sumCost += row.costValue;
-                sumNet += netVal;
+                sumVal += row.currentValue; sumCost += row.costValue; sumNet += netVal;
                 
                 const pl = row.currentValue - row.costValue;
                 const plPct = (pl / row.costValue) * 100;
-                
-                let plClass = "text-slate-600";
-                if(pl > 0) plClass = "text-emerald-600 font-medium";
-                if(pl < 0) plClass = "text-rose-600 font-medium";
+                let plClass = pl > 0 ? "text-emerald-600 font-medium" : (pl < 0 ? "text-rose-600 font-medium" : "text-slate-600");
 
                 const brokerBadge = row.isAggregated 
                     ? `<button onclick="showBreakdown('${row.code}', '${row.accountType}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-1.5 py-0.5 rounded text-[10px] md:text-xs transition-colors cursor-pointer border border-blue-200 font-bold shadow-sm whitespace-nowrap">合算 <i class="fa-solid fa-magnifying-glass text-[8px] ml-0.5"></i></button>`
                     : `<span class="bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] md:text-xs whitespace-nowrap">${row.broker}</span>`;
                 
                 const accountBadgeClass = row.accountType === 'NISA' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+                let typeText = row.type === 'US' ? "米国" : (row.type === 'FUND' ? "投信" : "株");
                 
-                let typeText = "株";
-                if(row.type === 'US') typeText = "米国";
-                if(row.type === 'FUND') typeText = "投信";
-                
-                const accountBadge = `
-                    <div class="flex items-center space-x-1 flex-wrap">
-                        <span class="${accountBadgeClass} border px-1.5 py-0.5 rounded text-[10px] md:text-xs mb-1">${row.accountType || '特定'}</span>
-                        <span class="bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0.5 rounded text-[9px] md:text-[10px] mb-1">${typeText}</span>
-                    </div>
-                `;
-
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="px-4 py-2 md:px-6 md:py-3">${brokerBadge}</td>
-                        <td class="px-4 py-2 md:px-6 md:py-3">${accountBadge}</td>
-                        <td class="px-4 py-2 md:px-6 md:py-3">
-                            <div class="font-bold text-slate-800 text-[11px] md:text-sm">${row.code}</div>
-                            <div class="text-[10px] md:text-xs text-slate-500 truncate max-w-[100px] md:max-w-[150px]">${row.name}</div>
-                        </td>
+                        <td class="px-4 py-2 md:px-6 md:py-3"><div class="flex items-center space-x-1 flex-wrap"><span class="${accountBadgeClass} border px-1.5 py-0.5 rounded text-[10px] md:text-xs mb-1">${row.accountType || '特定'}</span><span class="bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0.5 rounded text-[9px] md:text-[10px] mb-1">${typeText}</span></div></td>
+                        <td class="px-4 py-2 md:px-6 md:py-3"><div class="font-bold text-slate-800 text-[11px] md:text-sm">${row.code}</div><div class="text-[10px] md:text-xs text-slate-500 truncate max-w-[100px] md:max-w-[150px]">${row.name}</div></td>
                         <td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtJpy.format(row.currentPrice)}</td>
                         <td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtNum.format(row.quantity)}</td>
                         <td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtJpy.format(row.avgPrice)}</td>
-                        <td class="px-4 py-2 md:px-6 md:py-3 text-right">
-                            <div class="font-bold text-slate-800">${fmtJpy.format(row.currentValue)}</div>
-                            <div class="text-[9px] md:text-[11px] text-slate-500 mt-0.5">手残り: ${fmtJpy.format(netVal)}</div>
-                        </td>
-                        <td class="px-4 py-2 md:px-6 md:py-3 text-right ${plClass}">
-                            <div>${pl > 0 ? '+' : ''}${fmtJpy.format(pl)}</div>
-                            <div class="text-[10px] md:text-xs">${pl > 0 ? '+' : ''}${plPct.toFixed(2)}%</div>
-                        </td>
+                        <td class="px-4 py-2 md:px-6 md:py-3 text-right"><div class="font-bold text-slate-800">${fmtJpy.format(row.currentValue)}</div><div class="text-[9px] md:text-[11px] text-slate-500 mt-0.5">手残り: ${fmtJpy.format(netVal)}</div></td>
+                        <td class="px-4 py-2 md:px-6 md:py-3 text-right ${plClass}"><div>${pl > 0 ? '+' : ''}${fmtJpy.format(pl)}</div><div class="text-[10px] md:text-xs">${pl > 0 ? '+' : ''}${plPct.toFixed(2)}%</div></td>
                     </tr>
                 `;
             });
@@ -985,14 +893,8 @@
             tfoot.innerHTML = `
                 <tr>
                     <td colspan="6" class="px-4 py-3 md:px-6 md:py-4 text-right">合計:</td>
-                    <td class="px-4 py-3 md:px-6 md:py-4 text-right">
-                        <div class="text-sm md:text-lg text-slate-800 font-bold">${fmtJpy.format(sumVal)}</div>
-                        <div class="text-[10px] md:text-xs text-slate-500 mt-1">手残り: ${fmtJpy.format(sumNet)}</div>
-                    </td>
-                    <td class="px-4 py-3 md:px-6 md:py-4 text-right ${totalPlClass}">
-                        <div class="font-bold text-sm md:text-base">${totalPl > 0 ? '+' : ''}${fmtJpy.format(totalPl)}</div>
-                        <div class="text-[10px] md:text-xs">${totalPl > 0 ? '+' : ''}${totalPlPct.toFixed(2)}%</div>
-                    </td>
+                    <td class="px-4 py-3 md:px-6 md:py-4 text-right"><div class="text-sm md:text-lg text-slate-800 font-bold">${fmtJpy.format(sumVal)}</div><div class="text-[10px] md:text-xs text-slate-500 mt-1">手残り: ${fmtJpy.format(sumNet)}</div></td>
+                    <td class="px-4 py-3 md:px-6 md:py-4 text-right ${totalPlClass}"><div class="font-bold text-sm md:text-base">${totalPl > 0 ? '+' : ''}${fmtJpy.format(totalPl)}</div><div class="text-[10px] md:text-xs">${totalPl > 0 ? '+' : ''}${totalPlPct.toFixed(2)}%</div></td>
                 </tr>
             `;
         }
@@ -1001,7 +903,6 @@
             const filter = document.getElementById('manage-broker-filter').value;
             const tbody = document.getElementById('manage-tbody');
             tbody.innerHTML = '';
-            
             let target = holdings;
             if (filter !== 'ALL') target = holdings.filter(h => h.broker === filter);
 
@@ -1013,23 +914,13 @@
                 tbody.innerHTML += `
                     <tr class="${bgClass} border-b border-slate-100 transition-colors">
                         <td class="px-3 md:px-4 py-2"><span class="bg-slate-100 border border-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px] md:text-xs whitespace-nowrap">${h.broker}</span></td>
-                        <td class="px-3 md:px-4 py-2">
-                            <span class="bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded text-[10px] md:text-xs border border-slate-200 mr-1 whitespace-nowrap">${acc}</span>
-                            <span class="bg-slate-50 text-slate-400 px-1 py-0.5 rounded text-[9px] md:text-[10px] border border-slate-200 whitespace-nowrap">${typeText}</span>
-                        </td>
-                        <td class="px-3 md:px-4 py-2">
-                            <div class="font-bold text-[11px] md:text-sm text-slate-800">${h.code}</div>
-                            <div class="text-[10px] md:text-xs text-slate-500 truncate max-w-[80px] md:max-w-[120px]">${h.name}</div>
-                        </td>
+                        <td class="px-3 md:px-4 py-2"><span class="bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded text-[10px] md:text-xs border border-slate-200 mr-1 whitespace-nowrap">${acc}</span><span class="bg-slate-50 text-slate-400 px-1 py-0.5 rounded text-[9px] md:text-[10px] border border-slate-200 whitespace-nowrap">${typeText}</span></td>
+                        <td class="px-3 md:px-4 py-2"><div class="font-bold text-[11px] md:text-sm text-slate-800">${h.code}</div><div class="text-[10px] md:text-xs text-slate-500 truncate max-w-[80px] md:max-w-[120px]">${h.name}</div></td>
                         <td class="px-3 md:px-4 py-2 text-right text-[11px] md:text-sm">${fmtNum.format(h.quantity)}</td>
                         <td class="px-3 md:px-4 py-2 text-right text-[11px] md:text-sm">${fmtJpy.format(h.avgPrice)}</td>
                         <td class="px-3 md:px-4 py-2 text-center space-x-1 md:space-x-2 whitespace-nowrap">
-                            <button onclick="editHolding('${h.id}')" class="text-blue-500 hover:text-blue-700 hover:bg-blue-100 p-1 md:p-1.5 rounded transition-colors" title="編集">
-                                <i class="fa-solid fa-pen text-sm"></i>
-                            </button>
-                            <button onclick="confirmDelete('${h.id}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 md:p-1.5 rounded transition-colors" title="削除">
-                                <i class="fa-solid fa-trash-can text-sm"></i>
-                            </button>
+                            <button onclick="editHolding('${h.id}')" class="text-blue-500 hover:text-blue-700 hover:bg-blue-100 p-1 md:p-1.5 rounded transition-colors"><i class="fa-solid fa-pen text-sm"></i></button>
+                            <button onclick="confirmDelete('${h.id}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 md:p-1.5 rounded transition-colors"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </td>
                     </tr>
                 `;
@@ -1048,17 +939,15 @@
             
             if (editTargetId) {
                 const index = holdings.findIndex(h => h.id === editTargetId);
-                if (index !== -1) {
-                    holdings[index] = { ...holdings[index], broker, accountType, type, code, name, quantity, avgPrice };
-                }
-                showMsg("更新完了", "データを更新しました。", "success");
+                if (index !== -1) holdings[index] = { ...holdings[index], broker, accountType, type, code, name, quantity, avgPrice };
+                showToast("データを更新しました", 'success');
                 cancelEdit();
             } else {
                 const newId = "id_" + Date.now();
                 holdings.push({ id: newId, broker, accountType, type, code, name, quantity, avgPrice });
                 if(!marketPrices[code]) marketPrices[code] = avgPrice;
                 document.getElementById('add-form').reset();
-                showMsg("追加完了", `${broker} (${accountType}) の ${name} を追加しました。`, "success");
+                showToast("データを追加しました", 'success');
             }
             saveData();
         }
@@ -1066,7 +955,6 @@
         function editHolding(id) {
             const target = holdings.find(h => h.id === id);
             if(!target) return;
-
             editTargetId = id;
             document.getElementById('add-broker').value = target.broker;
             document.getElementById('add-account').value = target.accountType || '特定';
@@ -1080,10 +968,8 @@
             btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> 更新';
             btn.classList.replace('bg-primary', 'bg-emerald-600');
             btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
-
             document.getElementById('edit-cancel-btn').classList.remove('hidden');
             document.getElementById('manage-form-title').innerHTML = `<span class="text-emerald-600"><i class="fa-solid fa-pen mr-2"></i>データの編集</span>`;
-            
             document.getElementById('manage-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
             renderManageTable();
         }
@@ -1091,12 +977,10 @@
         function cancelEdit() {
             editTargetId = null;
             document.getElementById('add-form').reset();
-
             const btn = document.getElementById('add-submit-btn');
             btn.innerHTML = '<i class="fa-solid fa-plus mr-1"></i> 追加';
             btn.classList.replace('bg-emerald-600', 'bg-primary');
             btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
-
             document.getElementById('edit-cancel-btn').classList.add('hidden');
             document.getElementById('manage-form-title').innerText = "新規データの追加";
             renderManageTable();
@@ -1106,22 +990,15 @@
             deleteTargetId = id;
             const target = holdings.find(h => h.id === id);
             if(!target) return;
-            
             document.getElementById('delete-modal-text').innerHTML = `
                 以下のデータを削除します。<br>
                 <div class="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs md:text-sm font-medium">
-                    ${target.broker} [${target.accountType || '特定'}] : ${target.code} ${target.name} <br>
-                    数量: ${target.quantity}
-                </div>
-            `;
+                    ${target.broker} [${target.accountType || '特定'}] : ${target.code} ${target.name} <br>数量: ${target.quantity}
+                </div>`;
             document.getElementById('delete-modal').classList.remove('hidden');
         }
         
-        function closeDeleteModal() {
-            document.getElementById('delete-modal').classList.add('hidden');
-            deleteTargetId = null;
-        }
-
+        function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); deleteTargetId = null; }
         function executeDelete() {
             if(deleteTargetId) {
                 if(deleteTargetId === editTargetId) cancelEdit();
@@ -1133,84 +1010,61 @@
 
         function showBreakdown(code, accountType) {
             const targetHoldings = holdings.filter(h => h.code === code && (h.accountType || '特定') === accountType);
-            
             let html = '';
             targetHoldings.forEach(h => {
                 html += `
                     <div class="flex justify-between items-center py-2 md:py-3 border-b border-slate-100 last:border-0">
-                        <div>
-                            <div class="font-bold text-slate-700 text-sm md:text-base"><i class="fa-solid fa-building-columns text-slate-400 mr-2 text-xs"></i>${h.broker}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-xs md:text-sm">数量: <span class="font-bold text-sm md:text-base">${fmtNum.format(h.quantity)}</span></div>
-                            <div class="text-[10px] md:text-xs text-slate-500">取得単価: ${fmtJpy.format(h.avgPrice)}</div>
-                        </div>
-                    </div>
-                `;
+                        <div><div class="font-bold text-slate-700 text-sm md:text-base"><i class="fa-solid fa-building-columns text-slate-400 mr-2 text-xs"></i>${h.broker}</div></div>
+                        <div class="text-right"><div class="text-xs md:text-sm">数量: <span class="font-bold text-sm md:text-base">${fmtNum.format(h.quantity)}</span></div><div class="text-[10px] md:text-xs text-slate-500">取得単価: ${fmtJpy.format(h.avgPrice)}</div></div>
+                    </div>`;
             });
             document.getElementById('breakdown-content').innerHTML = html;
             document.getElementById('breakdown-title').innerText = `${code} の内訳 (${accountType})`;
             document.getElementById('breakdown-modal').classList.remove('hidden');
         }
 
-        function closeBreakdownModal() {
-            document.getElementById('breakdown-modal').classList.add('hidden');
-        }
+        function closeBreakdownModal() { document.getElementById('breakdown-modal').classList.add('hidden'); }
 
         function updateBackupTextarea() {
-            const backupObj = {
-                holdings: holdings,
-                history: assetHistory
-            };
-            document.getElementById('backup-data').value = JSON.stringify(backupObj);
+            document.getElementById('backup-data').value = JSON.stringify({
+                holdings: holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset
+            });
         }
 
         function copyBackup() {
             const textarea = document.getElementById('backup-data');
             textarea.select();
             document.execCommand('copy');
-            showMsg("コピー完了", "クリップボードにバックアップデータをコピーしました。メモ帳などに貼り付けて保存してください。", "success");
+            showToast("コピーしました。メモ帳に保存してください。", 'success');
         }
 
         function importBackup() {
             const str = document.getElementById('import-data').value;
             if(!str) return;
-            
             try {
                 const parsed = JSON.parse(str);
-                
-                if (Array.isArray(parsed)) {
-                    holdings = parsed;
-                    assetHistory = [];
-                } else if (parsed.holdings && Array.isArray(parsed.holdings)) {
+                if(Array.isArray(parsed)) {
+                    holdings = parsed; // 古い形式の互換
+                } else if (parsed.holdings) {
                     holdings = parsed.holdings;
-                    assetHistory = parsed.history || [];
-                } else {
-                    throw new Error("フォーマットエラー");
+                    historyData = parsed.history || [];
+                    marketPrices = parsed.prices || {};
+                    lastTotalAsset = parsed.lastTotal || 0;
                 }
-
-                saveData();
-                initPrices();
+                saveData(); initPrices(); updateAllViews();
                 document.getElementById('import-data').value = "";
-                showMsg("復元成功", "データを復元しました。", "success");
-                
+                showToast("データの復元に成功しました！", 'success');
             } catch(e) {
-                showMsg("エラー", "正しいJSONデータではありません。", "error");
+                showToast("正しいデータ形式ではありません", 'error');
             }
         }
 
         function saveSettings() {
-            const finnhub = document.getElementById('api-key-finnhub').value;
-            const customUrl = document.getElementById('api-url-custom').value;
-            const fxRate = document.getElementById('setting-fx-rate').value;
-            
-            localStorage.setItem('api_key_finnhub', finnhub);
-            localStorage.setItem('api_url_custom', customUrl);
-            localStorage.setItem('setting_fx_rate', fxRate);
-            
+            localStorage.setItem('api_key_finnhub', document.getElementById('api-key-finnhub').value);
+            localStorage.setItem('api_url_custom', document.getElementById('api-url-custom').value);
+            localStorage.setItem('setting_fx_rate', document.getElementById('setting-fx-rate').value);
             const msg = document.getElementById('save-msg');
-            msg.style.opacity = 1;
-            setTimeout(() => { msg.style.opacity = 0; }, 3000);
+            msg.style.opacity = 1; setTimeout(() => { msg.style.opacity = 0; }, 3000);
         }
 
         function loadSettings() {
@@ -1218,26 +1072,6 @@
             document.getElementById('api-url-custom').value = localStorage.getItem('api_url_custom') || '';
             document.getElementById('setting-fx-rate').value = localStorage.getItem('setting_fx_rate') || '150.00';
         }
-
-        function showMsg(title, text, type) {
-            document.getElementById('msg-modal-title').innerText = title;
-            document.getElementById('msg-modal-text').innerHTML = text;
-            
-            const icon = document.getElementById('msg-modal-icon');
-            if(type === 'success') {
-                icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-                icon.className = "text-3xl md:text-4xl mb-3 md:mb-4 text-emerald-500";
-            } else if (type === 'error') {
-                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
-                icon.className = "text-3xl md:text-4xl mb-3 md:mb-4 text-rose-500";
-            } else {
-                icon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
-                icon.className = "text-3xl md:text-4xl mb-3 md:mb-4 text-primary";
-            }
-            
-            document.getElementById('msg-modal').classList.remove('hidden');
-        }
-        function closeMsgModal() { document.getElementById('msg-modal').classList.add('hidden'); }
 
     </script>
 </body>
