@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <link rel="apple-touch-icon" href="money.png">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ffffff">
-<meta name="apple-mobile-web-app-title" content="資産管理">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>資産管理ポートフォリオ</title>
+    
+    <!-- 追加いただいたPWA用メタタグ -->
+    <link rel="apple-touch-icon" href="money.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-title" content="資産管理">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script>
@@ -40,6 +46,7 @@
 </head>
 <body class="flex h-[100dvh] overflow-hidden text-sm md:text-base">
 
+    <!-- サイドバー -->
     <aside class="w-16 md:w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm flex-shrink-0">
         <div class="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-200">
             <i class="fa-solid fa-chart-pie text-primary text-xl md:text-2xl mt-1 md:mt-0"></i>
@@ -65,6 +72,7 @@
         </nav>
     </aside>
 
+    <!-- メインコンテンツ -->
     <main class="flex-1 flex flex-col h-[100dvh] overflow-hidden relative">
         
         <header class="h-16 min-h-[4rem] flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white z-10 shadow-sm flex-shrink-0">
@@ -76,6 +84,7 @@
 
         <div id="content-area" class="flex-1 overflow-auto p-3 md:p-8 bg-slate-50 pb-8 md:pb-8">
             
+            <!-- ====== 1. ダッシュボード ====== -->
             <div id="view-dashboard" class="space-y-4 md:space-y-6 block max-w-7xl mx-auto">
                 <div class="flex justify-between items-center bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex items-center w-full">
@@ -87,13 +96,24 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    <div class="bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm relative overflow-hidden">
+                    <!-- 総資産カード -->
+                    <div class="bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-center">
                         <div class="absolute -right-4 -top-4 text-slate-100"><i class="fa-solid fa-wallet text-8xl"></i></div>
                         <h2 class="text-slate-500 text-xs md:text-sm font-medium mb-1 relative z-10">総資産額</h2>
                         <div class="text-2xl md:text-3xl font-bold text-slate-800 mb-2 relative z-10" id="dash-total-assets">¥0</div>
-                        <div class="flex items-center text-xs md:text-sm relative z-10">
-                            <span id="dash-total-profit" class="font-medium flex items-center">¥0 (0.00%)</span>
-                            <span class="text-slate-500 ml-2">評価損益</span>
+                        
+                        <!-- 評価損益と前回更新からの変動を並べて表示 -->
+                        <div class="space-y-1.5 mt-1 relative z-10">
+                            <div class="flex items-center text-xs md:text-sm">
+                                <span id="dash-total-profit" class="font-medium flex items-center">¥0 (0.00%)</span>
+                                <span class="text-slate-500 ml-2">総評価損益</span>
+                            </div>
+                            <div class="flex items-center text-xs md:text-sm">
+                                <span id="dash-recent-diff" class="font-medium flex items-center bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
+                                    --
+                                </span>
+                                <span class="text-slate-500 ml-2">前回更新からの変動</span>
+                            </div>
                         </div>
                     </div>
                     
@@ -119,7 +139,7 @@
                     
                     <div class="bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm flex flex-col">
                         <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-slate-500 text-xs md:text-sm font-medium">資産推移 (シミュレーション)</h2>
+                            <h2 class="text-slate-500 text-xs md:text-sm font-medium">資産推移 (実データ)</h2>
                             <select id="dash-history-period" onchange="renderDashboard()" class="bg-slate-50 border border-slate-300 text-slate-700 text-[10px] md:text-xs rounded-md p-1 outline-none cursor-pointer">
                                 <option value="7d">1週間</option>
                                 <option value="1m">1ヶ月</option>
@@ -134,6 +154,7 @@
                 </div>
             </div>
 
+            <!-- ====== 2. 保有資産一覧 ====== -->
             <div id="view-holdings" class="space-y-4 md:space-y-6 hidden max-w-7xl mx-auto">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4 bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex items-center w-full">
@@ -167,6 +188,7 @@
                 </div>
             </div>
 
+            <!-- ====== 3. データ管理 ====== -->
             <div id="view-manage" class="space-y-4 md:space-y-8 hidden max-w-7xl mx-auto">
                 
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm relative" id="manage-form-container">
@@ -267,6 +289,7 @@
                 </div>
             </div>
 
+            <!-- ====== 4. 設定 ====== -->
             <div id="view-settings" class="space-y-4 md:space-y-6 hidden max-w-3xl mx-auto">
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
                     <h2 class="text-base md:text-lg font-bold text-slate-800 mb-4 border-b pb-2">API連携・外部データ設定</h2>
@@ -312,6 +335,7 @@
         </div>
     </main>
 
+    <!-- モーダル群 -->
     <div id="breakdown-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6 transform transition-all">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
@@ -349,10 +373,13 @@
         
         let holdings = [];
         let marketPrices = {};
+        // 実データの履歴配列 { date: "YYYY/MM/DD", value: 10000 }
+        let assetHistory = []; 
+        let lastTotalAsset = null; // 前回更新時の総資産額
+        
         let charts = { broker: null, type: null, history: null };
         let deleteTargetId = null; 
         let editTargetId = null;   
-        let mockHistoryData = [];  
         let refreshTimestamps = []; 
 
         const DEFAULT_DATA = [
@@ -376,6 +403,9 @@
 
         function loadData() {
             const saved = localStorage.getItem('myportfolio_data');
+            const savedHistory = localStorage.getItem('myportfolio_history');
+            const savedLastTotal = localStorage.getItem('myportfolio_last_total');
+
             if (saved) {
                 try {
                     holdings = JSON.parse(saved);
@@ -390,12 +420,26 @@
             } else {
                 holdings = [...DEFAULT_DATA];
             }
+
+            // 履歴と前回総資産の読み込み
+            if (savedHistory) {
+                try { assetHistory = JSON.parse(savedHistory); } catch(e) { assetHistory = []; }
+            }
+            if (savedLastTotal) {
+                lastTotalAsset = parseFloat(savedLastTotal);
+            }
+
             updateBrokerFilterOptions();
             updateBackupTextarea();
         }
 
         function saveData() {
             localStorage.setItem('myportfolio_data', JSON.stringify(holdings));
+            localStorage.setItem('myportfolio_history', JSON.stringify(assetHistory));
+            if(lastTotalAsset !== null) {
+                localStorage.setItem('myportfolio_last_total', lastTotalAsset.toString());
+            }
+            
             updateBrokerFilterOptions();
             updateBackupTextarea();
             updateAllViews();
@@ -423,16 +467,14 @@
             const icon = document.getElementById('refresh-icon');
             icon.classList.add('fa-spin');
 
-            // ======== 【追加】為替レートの自動取得 ========
+            // 為替レートの自動取得
             let fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
             try {
-                // 無料で登録不要の公開為替APIを利用
                 const fxRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
                 if (fxRes.ok) {
                     const fxData = await fxRes.json();
                     if (fxData && fxData.rates && fxData.rates.JPY) {
                         fxRate = fxData.rates.JPY;
-                        // 設定画面の入力欄も自動で書き換えて保存
                         document.getElementById('setting-fx-rate').value = fxRate.toFixed(2);
                         localStorage.setItem('setting_fx_rate', fxRate.toFixed(2));
                     }
@@ -440,11 +482,16 @@
             } catch(e) {
                 console.warn("為替の取得に失敗しました。前回保存されたレートを使用します。");
             }
-            // ===============================================
             
             const finnhubKey = localStorage.getItem('api_key_finnhub');
             const customUrl = localStorage.getItem('api_url_custom');
             
+            // 現在の総資産を「前回分」として保存（取得が成功した場合に備えて）
+            let currentTotalBeforeRefresh = calculateCurrentTotalAssets();
+            if(currentTotalBeforeRefresh > 0) {
+                lastTotalAsset = currentTotalBeforeRefresh;
+            }
+
             const uniqueHoldings = [];
             holdings.forEach(h => {
                 if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) {
@@ -517,11 +564,43 @@
                 }
             }
 
-            updateAllViews();
+            // 取得成功後に履歴に書き込む処理
+            const newTotal = calculateCurrentTotalAssets();
+            if (newTotal > 0) {
+                recordAssetHistory(newTotal);
+            }
+
+            saveData(); 
             icon.classList.remove('fa-spin');
 
             if (failedCodes.length > 0) {
                 showMsg("更新完了 (一部失敗)", `一部の項目の情報が取得できませんでした。<br><br><span class="text-rose-600 font-bold">失敗した項目:</span><br>${failedCodes.join('<br>')}`, "error");
+            }
+        }
+
+        function calculateCurrentTotalAssets() {
+            let total = 0;
+            holdings.forEach(h => {
+                const price = marketPrices[h.code] || h.avgPrice;
+                total += price * h.quantity;
+            });
+            return total;
+        }
+
+        function recordAssetHistory(totalValue) {
+            const today = new Date();
+            const dateStr = today.getFullYear() + '/' + (today.getMonth() + 1) + '/' + today.getDate();
+            
+            const existingIndex = assetHistory.findIndex(h => h.date === dateStr);
+            if (existingIndex !== -1) {
+                assetHistory[existingIndex].value = totalValue;
+            } else {
+                assetHistory.push({ date: dateStr, value: totalValue });
+            }
+            
+            // 過去1000日分まで保持
+            if(assetHistory.length > 1000) {
+                assetHistory.shift(); 
             }
         }
 
@@ -617,7 +696,7 @@
                     const currentVal = el.value;
                     let html = '';
                     if(id === 'manage-broker-filter') {
-                        html = `<option value="ALL">全ての証券会社</option>`;
+                        html = `<option value="ALL">全て</option>`;
                     } else {
                         html = `<option value="ALL">全体 (合算)</option>`;
                     }
@@ -676,12 +755,56 @@
                 pEl.innerHTML = `<i class="fa-solid fa-arrow-down mr-1 text-xs md:text-sm"></i> ${fmtJpy.format(profit)} (${profitPct.toFixed(2)}%)`;
             }
 
+            const diffEl = document.getElementById('dash-recent-diff');
+            if (lastTotalAsset && lastTotalAsset > 0) {
+                const diff = totalVal - lastTotalAsset;
+                if (diff === 0) {
+                    diffEl.className = "font-medium flex items-center bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200";
+                    diffEl.innerHTML = `±0`;
+                } else if (diff > 0) {
+                    diffEl.className = "font-medium flex items-center bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-200";
+                    diffEl.innerHTML = `<i class="fa-solid fa-caret-up mr-1"></i> +${fmtJpy.format(diff)}`;
+                } else {
+                    diffEl.className = "font-medium flex items-center bg-rose-50 text-rose-600 px-2 py-0.5 rounded border border-rose-200";
+                    diffEl.innerHTML = `<i class="fa-solid fa-caret-down mr-1"></i> ${fmtJpy.format(diff)}`;
+                }
+            } else {
+                diffEl.className = "font-medium flex items-center bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200";
+                diffEl.innerHTML = `--`;
+            }
+
             renderDashBrokerList(brokerTotals, brokerCosts);
 
             const historyPeriod = document.getElementById('dash-history-period').value || '7d';
-            mockHistoryData = generateHistoryMock(totalVal, historyPeriod);
+            const filteredHistory = filterHistoryByPeriod(assetHistory, historyPeriod);
+            
+            if (filteredHistory.length === 0) {
+                const today = new Date();
+                filteredHistory.push({ 
+                    date: today.getFullYear() + '/' + (today.getMonth() + 1) + '/' + today.getDate(), 
+                    value: totalVal 
+                });
+            }
 
-            drawCharts(brokerTotals, typeTotals, mockHistoryData);
+            drawCharts(brokerTotals, typeTotals, filteredHistory);
+        }
+
+        function filterHistoryByPeriod(historyArray, period) {
+            if (!historyArray || historyArray.length === 0) return [];
+            
+            let days = 7;
+            if(period === '1m') days = 30;
+            if(period === '1y') days = 365;
+            if(period === 'all') return historyArray;
+
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            cutoffDate.setHours(0,0,0,0);
+
+            return historyArray.filter(item => {
+                const itemDate = new Date(item.date);
+                return itemDate >= cutoffDate;
+            });
         }
 
         function renderDashBrokerList(totals, costs) {
@@ -716,37 +839,6 @@
             }
         }
 
-        function generateHistoryMock(currentTotal, period) {
-            let history = [];
-            let days = 7;
-            if(period === '1m') days = 30;
-            if(period === '1y') days = 365;
-            if(period === 'all') days = 1000;
-
-            let tempVal = currentTotal * (1 - (days * 0.001)); 
-            let step = 1;
-            if(days > 30 && days <= 365) step = 7; 
-            if(days > 365) step = 30; 
-
-            for(let i = days; i >= 1; i -= step) {
-                let d = new Date();
-                d.setDate(d.getDate() - i);
-                let dateStr = (period === '1y' || period === 'all') 
-                    ? d.getFullYear() + '/' + (d.getMonth()+1) 
-                    : (d.getMonth()+1) + '/' + d.getDate();
-                    
-                history.push({ date: dateStr, value: tempVal });
-                tempVal += (currentTotal - tempVal) / (i/step) + (Math.random()-0.5)*(currentTotal*0.02);
-            }
-            
-            let today = new Date();
-            let todayStr = (period === '1y' || period === 'all')
-                ? today.getFullYear() + '/' + (today.getMonth()+1) 
-                : (today.getMonth()+1) + '/' + today.getDate();
-            history.push({ date: todayStr, value: currentTotal });
-            return history;
-        }
-
         function drawCharts(brokerData, typeData, historyData) {
             const bgColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
@@ -775,16 +867,25 @@
             });
 
             if(charts.history) charts.history.destroy();
+            
+            const formattedLabels = historyData.map(d => {
+                const parts = d.date.split('/');
+                if(parts.length === 3) {
+                    return `${parts[1]}/${parts[2]}`;
+                }
+                return d.date;
+            });
+
             charts.history = new Chart(document.getElementById('historyChart').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: historyData.map(d => d.date),
+                    labels: formattedLabels,
                     datasets: [{
                         label: '総資産推移',
                         data: historyData.map(d => d.value),
                         borderColor: '#2563eb',
                         backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        fill: true, tension: 0.3, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4
+                        fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3, pointHoverRadius: 5
                     }]
                 },
                 options: { 
@@ -794,8 +895,13 @@
                         tooltip: { callbacks: { label: (ctx) => fmtJpy.format(ctx.raw) } }
                     },
                     scales: {
-                        y: { ticks: { callback: v => (v/10000).toFixed(0) + '万', font: {size: 10} }, grid: { display: false } },
-                        x: { ticks: { font: {size: 10} }, grid: { display: false } }
+                        y: { 
+                            ticks: { callback: v => (v/10000).toFixed(0) + '万', font: {size: 10} }, 
+                            grid: { display: false },
+                            suggestedMin: Math.min(...historyData.map(d => d.value)) * 0.95,
+                            suggestedMax: Math.max(...historyData.map(d => d.value)) * 1.05
+                        },
+                        x: { ticks: { font: {size: 10}, maxTicksLimit: 10 }, grid: { display: false } }
                     }
                 }
             });
@@ -1052,7 +1158,11 @@
         }
 
         function updateBackupTextarea() {
-            document.getElementById('backup-data').value = JSON.stringify(holdings);
+            const backupObj = {
+                holdings: holdings,
+                history: assetHistory
+            };
+            document.getElementById('backup-data').value = JSON.stringify(backupObj);
         }
 
         function copyBackup() {
@@ -1068,15 +1178,22 @@
             
             try {
                 const parsed = JSON.parse(str);
-                if(Array.isArray(parsed)) {
+                
+                if (Array.isArray(parsed)) {
                     holdings = parsed;
-                    saveData();
-                    initPrices();
-                    document.getElementById('import-data').value = "";
-                    showMsg("復元成功", "データを復元しました。", "success");
+                    assetHistory = [];
+                } else if (parsed.holdings && Array.isArray(parsed.holdings)) {
+                    holdings = parsed.holdings;
+                    assetHistory = parsed.history || [];
                 } else {
                     throw new Error("フォーマットエラー");
                 }
+
+                saveData();
+                initPrices();
+                document.getElementById('import-data').value = "";
+                showMsg("復元成功", "データを復元しました。", "success");
+                
             } catch(e) {
                 showMsg("エラー", "正しいJSONデータではありません。", "error");
             }
