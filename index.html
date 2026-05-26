@@ -47,7 +47,7 @@
 </head>
 <body class="flex h-[100dvh] overflow-hidden text-sm md:text-base relative">
 
-    <!-- トースト通知 (OKボタン不要のスマート通知) -->
+    <!-- トースト通知 -->
     <div id="toast-notification" class="fixed top-6 left-1/2 transform -translate-x-1/2 -translate-y-32 opacity-0 transition-all duration-300 z-[100] flex items-center shadow-xl rounded-full px-5 py-3 text-sm md:text-base font-bold pointer-events-none">
         <i id="toast-icon" class="fa-solid fa-circle-notch fa-spin mr-3 text-lg"></i>
         <span id="toast-message">更新中...</span>
@@ -113,7 +113,6 @@
                                 <span id="dash-total-profit" class="font-medium flex items-center">¥0 (0.00%)</span>
                                 <span class="text-slate-500 ml-2">評価損益</span>
                             </div>
-                            <!-- 追加: 前回更新からの増減 -->
                             <div class="flex items-center text-xs md:text-sm">
                                 <span id="dash-diff-prev" class="font-medium flex items-center text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">--</span>
                                 <span class="text-slate-500 ml-2">前回更新比</span>
@@ -193,7 +192,7 @@
             </div>
 
             <!-- ====== 3. データ管理 ====== -->
-            <div id="view-manage" class="space-y-4 md:space-y-8 hidden max-w-7xl mx-auto">
+            <div id="view-manage" class="space-y-4 md:space-y-6 hidden max-w-7xl mx-auto">
                 
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm relative" id="manage-form-container">
                     <h2 class="text-base md:text-lg font-bold text-slate-800 mb-4 border-b pb-2" id="manage-form-title">新規データの追加</h2>
@@ -246,12 +245,20 @@
                 </div>
 
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <!-- 追加: 検索・絞り込み機能 -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-3 gap-3">
                         <h2 class="text-base md:text-lg font-bold text-slate-800">登録データ一覧</h2>
-                        <select id="manage-broker-filter" onchange="renderManageTable()" class="bg-slate-50 border border-slate-300 text-slate-800 text-[10px] md:text-xs rounded-lg p-1 outline-none">
-                            <option value="ALL">全て</option>
-                        </select>
+                        <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                            <div class="relative w-full sm:w-48">
+                                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 md:top-2.5 text-slate-400 text-xs"></i>
+                                <input type="text" id="manage-search-input" oninput="renderManageTable()" placeholder="銘柄名・コードで検索" class="w-full pl-7 bg-slate-50 border border-slate-300 text-slate-800 text-[10px] md:text-xs rounded-lg p-1.5 md:p-2 outline-none focus:border-primary transition-colors">
+                            </div>
+                            <select id="manage-broker-filter" onchange="renderManageTable()" class="bg-slate-50 border border-slate-300 text-slate-800 text-[10px] md:text-xs rounded-lg p-1.5 md:p-2 outline-none w-full sm:w-auto focus:border-primary">
+                                <option value="ALL">全ての証券会社</option>
+                            </select>
+                        </div>
                     </div>
+                    
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px] md:min-w-[700px] text-xs md:text-sm">
                             <thead>
@@ -270,25 +277,46 @@
                     </div>
                 </div>
 
+                <!-- 追加・改善: ファイル形式対応バックアップエリア -->
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h2 class="text-base md:text-lg font-bold text-slate-800">バックアップ・復元</h2>
                     </div>
-                    <p class="text-xs md:text-sm text-slate-600 mb-4">保有銘柄や取得した株価、グラフの推移履歴がすべて文字（JSON）になります。コピーしてメモ帳などに保存してください。</p>
                     
-                    <div class="relative">
-                        <textarea id="backup-data" class="w-full h-24 md:h-32 p-2 md:p-3 text-[10px] md:text-xs font-mono bg-slate-50 border border-slate-300 rounded outline-none focus:border-primary" readonly></textarea>
-                        <button onclick="copyBackup()" class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 md:px-3 rounded hover:bg-slate-700 shadow-sm">
-                            <i class="fa-regular fa-copy mr-1"></i> コピー
-                        </button>
-                    </div>
-                    
-                    <div class="mt-4 pt-4 border-t border-slate-100">
-                        <h3 class="text-xs md:text-sm font-bold text-slate-700 mb-2">データの復元</h3>
-                        <textarea id="import-data" class="w-full h-16 md:h-20 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary mb-2" placeholder="ここにバックアップデータを貼り付け..."></textarea>
-                        <button onclick="importBackup()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs md:text-sm font-medium py-1.5 md:py-2 px-4 rounded transition-colors shadow-sm">
-                            <i class="fa-solid fa-file-import mr-1"></i> 復元する
-                        </button>
+                    <div class="space-y-5">
+                        <!-- ファイル方式 -->
+                        <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                            <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-file-arrow-down mr-2 text-primary"></i>ファイルで保存・復元 (おすすめ)</h3>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-3">本体にバックアップファイル(.json)をダウンロード、または読み込みます。</p>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button onclick="downloadBackupFile()" class="bg-primary hover:bg-blue-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors flex items-center justify-center whitespace-nowrap">
+                                    <i class="fa-solid fa-download mr-2"></i>ダウンロード
+                                </button>
+                                <div class="relative flex-1">
+                                    <input type="file" id="file-upload" accept=".json" onchange="uploadBackupFile(event)" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded bg-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- テキスト方式 -->
+                        <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                            <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-copy mr-2 text-slate-500"></i>テキストで保存・復元 (従来の方法)</h3>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-3">文字データをコピーしてメモ帳等に保存、または貼り付けて復元します。</p>
+                            
+                            <div class="relative mb-3">
+                                <textarea id="backup-data" class="w-full h-16 md:h-20 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" readonly></textarea>
+                                <button onclick="copyBackupText()" class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 rounded hover:bg-slate-700 shadow-sm">
+                                    <i class="fa-regular fa-copy mr-1"></i> コピー
+                                </button>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <textarea id="import-data" class="w-full h-10 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" placeholder="ここに文字データを貼り付け..."></textarea>
+                                <button onclick="importBackupText()" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors shadow-sm whitespace-nowrap">
+                                    復元する
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -377,12 +405,6 @@
         let deleteTargetId = null; 
         let editTargetId = null;   
 
-        const DEFAULT_DATA = [
-            { id: "1", broker: "SBI証券", code: "7203", name: "トヨタ自動車", quantity: 100, avgPrice: 3000, type: "JP", accountType: "特定" },
-            { id: "4", broker: "マネックス証券", code: "AAPL", name: "Apple Inc.", quantity: 20, avgPrice: 25000, type: "US", accountType: "一般" }, 
-            { id: "5", broker: "楽天証券", code: "0331418A", name: "eMAXIS Slim 米国株式(S&P500)", quantity: 2.5, avgPrice: 28000, type: "FUND", accountType: "NISA" }
-        ];
-
         window.onload = () => {
             loadData();
             loadSettings();
@@ -405,7 +427,6 @@
             clearTimeout(toastTimeout);
             msgEl.innerHTML = msg;
             
-            // 一旦クラスをリセットして表示状態へ
             toast.className = "fixed top-6 left-1/2 transform -translate-x-1/2 transition-all duration-300 z-[100] flex items-center shadow-xl px-5 py-3 text-sm md:text-base font-bold pointer-events-none translate-y-0 opacity-100";
             
             if (type === 'success') {
@@ -419,7 +440,6 @@
                 icon.className = "fa-solid fa-circle-notch fa-spin mr-3 text-lg";
             }
             
-            // ロード中以外は自動で隠す
             if (type !== 'info') {
                 toastTimeout = setTimeout(() => {
                     toast.classList.replace('translate-y-0', '-translate-y-32');
@@ -438,9 +458,7 @@
                     historyData = parsed.history || [];
                     marketPrices = parsed.prices || {};
                     lastTotalAsset = parsed.lastTotal || 0;
-                } catch(e) {
-                    fallbackLoad();
-                }
+                } catch(e) { fallbackLoad(); }
             } else {
                 fallbackLoad();
             }
@@ -457,40 +475,25 @@
 
         function fallbackLoad() {
             const oldSaved = localStorage.getItem('myportfolio_data');
-            if (oldSaved) {
-                holdings = JSON.parse(oldSaved);
-            } else {
-                holdings = [...DEFAULT_DATA];
-            }
+            if (oldSaved) holdings = JSON.parse(oldSaved);
         }
 
         function saveData() {
-            const appData = {
-                holdings: holdings,
-                history: historyData,
-                prices: marketPrices,
-                lastTotal: lastTotalAsset
-            };
+            const appData = { holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset };
             localStorage.setItem('myportfolio_app_data', JSON.stringify(appData));
             updateBrokerFilterOptions();
             updateBackupTextarea();
         }
 
         function initPrices() {
-            // モック(ランダム変動)を廃止。保存された価格がなければ取得単価を初期値にする
             holdings.forEach(h => {
-                if (!marketPrices[h.code]) {
-                    marketPrices[h.code] = h.avgPrice;
-                }
+                if (!marketPrices[h.code]) marketPrices[h.code] = h.avgPrice;
             });
         }
 
         function calcTotalAssets() {
             let total = 0;
-            holdings.forEach(h => {
-                const p = marketPrices[h.code] || h.avgPrice;
-                total += p * h.quantity;
-            });
+            holdings.forEach(h => { total += (marketPrices[h.code] || h.avgPrice) * h.quantity; });
             return total;
         }
 
@@ -501,13 +504,9 @@
             
             btn.classList.add('pointer-events-none', 'opacity-70');
             icon.classList.add('fa-spin');
+            showToast("最新価格を取得中..."); 
             
-            showToast("最新価格を取得中..."); // モーダルの代わりにトースト表示
-            
-            // 更新前の総資産額を記録（前回比のため）
             const oldTotal = calcTotalAssets();
-
-            // 為替レートの自動取得
             let fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
             try {
                 const fxRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
@@ -526,9 +525,7 @@
             
             const uniqueHoldings = [];
             holdings.forEach(h => {
-                if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) {
-                    uniqueHoldings.push({ code: h.code, type: h.type });
-                }
+                if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) uniqueHoldings.push({ code: h.code, type: h.type });
             });
 
             const failedCodes = [];
@@ -536,9 +533,8 @@
             // 米国株
             const usHoldings = uniqueHoldings.filter(h => h.type === 'US');
             if (usHoldings.length > 0) {
-                if (!finnhubKey) {
-                    usHoldings.forEach(h => failedCodes.push(`${h.code}(設定なし)`));
-                } else {
+                if (!finnhubKey) usHoldings.forEach(h => failedCodes.push(`${h.code}(設定なし)`));
+                else {
                     await Promise.all(usHoldings.map(async (h) => {
                         try {
                             const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${h.code}&token=${finnhubKey}`);
@@ -555,42 +551,29 @@
             // 日本株・投資信託 (GAS連携)
             const jpFundHoldings = uniqueHoldings.filter(h => h.type === 'JP' || h.type === 'FUND');
             if (jpFundHoldings.length > 0) {
-                if (!customUrl) {
-                    jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(設定なし)`));
-                } else {
+                if (!customUrl) jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(設定なし)`));
+                else {
                     try {
                         const codesStr = jpFundHoldings.map(h => h.code).join(',');
-                        const url = `${customUrl}?codes=${codesStr}`;
-                        const res = await fetch(url);
+                        const res = await fetch(`${customUrl}?codes=${codesStr}`);
                         if(res.ok) {
                             const data = await res.json();
-                            if(data.results) {
-                                Object.keys(data.results).forEach(code => marketPrices[code] = data.results[code]);
-                            }
-                            if(data.errors && data.errors.length > 0) {
-                                data.errors.forEach(code => failedCodes.push(code));
-                            }
-                        } else {
-                            jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(失敗)`));
-                        }
-                    } catch(e) {
-                        jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(通信エラー)`));
-                    }
+                            if(data.results) Object.keys(data.results).forEach(code => marketPrices[code] = data.results[code]);
+                            if(data.errors && data.errors.length > 0) data.errors.forEach(code => failedCodes.push(code));
+                        } else jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(失敗)`));
+                    } catch(e) { jpFundHoldings.forEach(h => failedCodes.push(`${h.code}(通信エラー)`)); }
                 }
             }
 
-            // ===== 更新後の履歴保存処理 =====
+            // 更新後の履歴保存処理
             const newTotal = calcTotalAssets();
-            lastTotalAsset = oldTotal; // 更新前を「前回」として記録
+            lastTotalAsset = oldTotal; 
             
             const today = new Date();
             const dateStr = today.getFullYear() + '/' + (today.getMonth()+1) + '/' + today.getDate();
             const existingIdx = historyData.findIndex(d => d.date === dateStr);
-            if (existingIdx >= 0) {
-                historyData[existingIdx].value = newTotal; // 今日2回目なら上書き
-            } else {
-                historyData.push({ date: dateStr, value: newTotal }); // 初めてなら追加
-            }
+            if (existingIdx >= 0) historyData[existingIdx].value = newTotal; 
+            else historyData.push({ date: dateStr, value: newTotal }); 
             
             saveData();
             updateAllViews();
@@ -598,7 +581,6 @@
             icon.classList.remove('fa-spin');
             btn.classList.remove('pointer-events-none', 'opacity-70');
 
-            // モーダルを廃止し、結果もトーストで知らせる
             if (failedCodes.length > 0) {
                 showToast(`一部取得失敗<br><span class="text-[11px] font-normal">失敗: ${failedCodes.slice(0,3).join(', ')}${failedCodes.length > 3 ? '...' : ''}</span>`, 'warning');
             } else {
@@ -606,7 +588,7 @@
             }
         }
 
-        // --- タブ切り替え ---
+        // --- UI表示処理 ---
         function switchTab(tabId) {
             const titles = { 'dashboard': 'ダッシュボード', 'holdings': '保有資産一覧', 'manage': 'データ管理', 'settings': '設定' };
             document.getElementById('page-title').innerText = titles[tabId];
@@ -701,10 +683,8 @@
             targetHoldings.forEach(h => {
                 const val = (marketPrices[h.code] || h.avgPrice) * h.quantity;
                 const cost = h.avgPrice * h.quantity;
-                
                 if(!brokerTotals[h.broker]) { brokerTotals[h.broker] = 0; brokerCosts[h.broker] = 0; }
                 brokerTotals[h.broker] += val; brokerCosts[h.broker] += cost;
-                
                 const type = h.type || 'OTHER';
                 if(typeTotals[type] === undefined) typeTotals[type] = 0;
                 typeTotals[type] += val;
@@ -712,10 +692,8 @@
 
             allData.forEach(d => { totalVal += d.currentValue; totalCost += d.costValue; });
 
-            // 総資産表示
             document.getElementById('dash-total-assets').innerText = fmtJpy.format(totalVal);
             
-            // 評価損益
             const profit = totalVal - totalCost;
             const profitPct = totalCost > 0 ? (profit / totalCost) * 100 : 0;
             const pEl = document.getElementById('dash-total-profit');
@@ -727,7 +705,6 @@
                 pEl.innerHTML = `<i class="fa-solid fa-arrow-down mr-1 text-xs md:text-sm"></i> ${fmtJpy.format(profit)} (${profitPct.toFixed(2)}%)`;
             }
 
-            // 前回比表示の更新
             const prevDiff = totalVal - lastTotalAsset;
             const prevDiffEl = document.getElementById('dash-diff-prev');
             if (lastTotalAsset === 0 || lastTotalAsset === totalVal) {
@@ -740,7 +717,6 @@
 
             renderDashBrokerList(brokerTotals, brokerCosts);
 
-            // 履歴グラフのフィルタリングと描画
             const historyPeriod = document.getElementById('dash-history-period').value || '7d';
             const filteredHistory = filterHistoryData(historyData, historyPeriod);
             drawCharts(brokerTotals, typeTotals, filteredHistory);
@@ -762,17 +738,14 @@
             
             let filtered = data.filter(d => {
                 const [y, m, day] = d.date.split('/');
-                const dateObj = new Date(y, m-1, day);
-                return dateObj >= cutoff;
+                return new Date(y, m-1, day) >= cutoff;
             });
             
-            // データが1件だけだとグラフが点になるため、見た目上、前日に同額データを入れる
             if (filtered.length === 1) {
                 const [y, m, day] = filtered[0].date.split('/');
                 const prev = new Date(y, m-1, day);
                 prev.setDate(prev.getDate() - 1);
-                const prevStr = prev.getFullYear() + '/' + (prev.getMonth()+1) + '/' + prev.getDate();
-                filtered = [{ date: prevStr, value: filtered[0].value }, filtered[0]];
+                filtered = [{ date: prev.getFullYear() + '/' + (prev.getMonth()+1) + '/' + prev.getDate(), value: filtered[0].value }, filtered[0]];
             }
             return filtered;
         }
@@ -791,59 +764,33 @@
                 listEl.innerHTML += `
                     <div class="flex justify-between items-center py-2 md:py-3 border-b border-slate-100 last:border-0">
                         <div class="font-medium text-slate-700 text-xs md:text-sm">${broker}</div>
-                        <div class="text-right leading-tight">
-                            <div class="font-bold text-slate-800 text-sm md:text-base">${fmtJpy.format(val)}</div>
-                            ${plHtml}
-                        </div>
-                    </div>
-                `;
+                        <div class="text-right leading-tight"><div class="font-bold text-slate-800 text-sm md:text-base">${fmtJpy.format(val)}</div>${plHtml}</div>
+                    </div>`;
             });
             if(sortedBrokers.length === 0) listEl.innerHTML = '<p class="text-slate-500 text-xs md:text-sm mt-4 text-center">データがありません</p>';
         }
 
         function drawCharts(brokerData, typeData, historyData) {
             const bgColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
-
             if(charts.broker) charts.broker.destroy();
             charts.broker = new Chart(document.getElementById('brokerChart').getContext('2d'), {
-                type: 'doughnut',
-                data: { labels: Object.keys(brokerData), datasets: [{ data: Object.values(brokerData), backgroundColor: bgColors, borderWidth: 0 }] },
+                type: 'doughnut', data: { labels: Object.keys(brokerData), datasets: [{ data: Object.values(brokerData), backgroundColor: bgColors, borderWidth: 0 }] },
                 options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 10, font: {size: 10}} } } }
             });
 
             if(charts.type) charts.type.destroy();
             charts.type = new Chart(document.getElementById('typeChart').getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['国内株', '米国株', '投資信託', 'その他'],
-                    datasets: [{ data: [typeData['JP']||0, typeData['US']||0, typeData['FUND']||0, typeData['OTHER']||0], backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#94a3b8'], borderWidth: 0 }]
-                },
+                type: 'doughnut', data: { labels: ['国内株', '米国株', '投資信託', 'その他'], datasets: [{ data: [typeData['JP']||0, typeData['US']||0, typeData['FUND']||0, typeData['OTHER']||0], backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#94a3b8'], borderWidth: 0 }] },
                 options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 10, font: {size: 10}} } } }
             });
 
             if(charts.history) charts.history.destroy();
             charts.history = new Chart(document.getElementById('historyChart').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: historyData.map(d => d.date),
-                    datasets: [{
-                        label: '総資産推移', data: historyData.map(d => d.value),
-                        borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        fill: true, tension: 0.1, borderWidth: 2, pointRadius: 3, pointHoverRadius: 5
-                    }]
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => fmtJpy.format(ctx.raw) } } },
-                    scales: {
-                        y: { ticks: { callback: v => (v/10000).toFixed(0) + '万', font: {size: 10} }, grid: { display: false } },
-                        x: { ticks: { font: {size: 10} }, grid: { display: false } }
-                    }
-                }
+                type: 'line', data: { labels: historyData.map(d => d.date), datasets: [{ label: '総資産推移', data: historyData.map(d => d.value), borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.1, borderWidth: 2, pointRadius: 3, pointHoverRadius: 5 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => fmtJpy.format(ctx.raw) } } }, scales: { y: { ticks: { callback: v => (v/10000).toFixed(0) + '万', font: {size: 10} }, grid: { display: false } }, x: { ticks: { font: {size: 10} }, grid: { display: false } } } }
             });
         }
 
-        // --- テーブル描画・データ操作 ---
         function renderHoldingsTable() {
             const filter = document.getElementById('broker-filter').value;
             const data = getAggregatedData(filter);
@@ -860,7 +807,6 @@
             data.forEach(row => {
                 const netVal = calcNetValue(row.currentValue, row.costValue, row.accountType);
                 sumVal += row.currentValue; sumCost += row.costValue; sumNet += netVal;
-                
                 const pl = row.currentValue - row.costValue;
                 const plPct = (pl / row.costValue) * 100;
                 let plClass = pl > 0 ? "text-emerald-600 font-medium" : (pl < 0 ? "text-rose-600 font-medium" : "text-slate-600");
@@ -899,12 +845,30 @@
             `;
         }
 
+        // --- データ管理・絞り込み検索 ---
         function renderManageTable() {
-            const filter = document.getElementById('manage-broker-filter').value;
+            const filterBroker = document.getElementById('manage-broker-filter').value;
+            const searchWord = document.getElementById('manage-search-input').value.toLowerCase();
             const tbody = document.getElementById('manage-tbody');
             tbody.innerHTML = '';
+            
             let target = holdings;
-            if (filter !== 'ALL') target = holdings.filter(h => h.broker === filter);
+            
+            // 証券会社で絞り込み
+            if (filterBroker !== 'ALL') target = target.filter(h => h.broker === filterBroker);
+            
+            // 銘柄名・コードで絞り込み (部分一致)
+            if (searchWord) {
+                target = target.filter(h => 
+                    h.name.toLowerCase().includes(searchWord) || 
+                    h.code.toLowerCase().includes(searchWord)
+                );
+            }
+
+            if (target.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">一致するデータがありません。</td></tr>`;
+                return;
+            }
 
             target.forEach(h => {
                 const acc = h.accountType || '特定';
@@ -1025,38 +989,89 @@
 
         function closeBreakdownModal() { document.getElementById('breakdown-modal').classList.add('hidden'); }
 
+        // --- バックアップ関連（ファイル＆テキスト対応） ---
         function updateBackupTextarea() {
-            document.getElementById('backup-data').value = JSON.stringify({
+            const dataStr = JSON.stringify({
                 holdings: holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset
             });
+            document.getElementById('backup-data').value = dataStr;
         }
 
-        function copyBackup() {
+        // ファイルダウンロード
+        function downloadBackupFile() {
+            const dataStr = JSON.stringify({
+                holdings: holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset
+            });
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const date = new Date();
+            const ymd = date.getFullYear() + String(date.getMonth()+1).padStart(2, '0') + String(date.getDate()).padStart(2, '0');
+            a.download = `myportfolio_backup_${ymd}.json`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast("バックアップファイルをダウンロードしました", 'success');
+        }
+
+        // ファイルアップロード
+        function uploadBackupFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    processImportData(parsed);
+                    document.getElementById('file-upload').value = ''; // 選択リセット
+                } catch(err) {
+                    showToast("ファイルの読み込みに失敗しました（形式エラー）", 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 従来のテキストコピー
+        function copyBackupText() {
             const textarea = document.getElementById('backup-data');
             textarea.select();
             document.execCommand('copy');
-            showToast("コピーしました。メモ帳に保存してください。", 'success');
+            showToast("テキストをコピーしました", 'success');
         }
 
-        function importBackup() {
+        // 従来のテキストインポート
+        function importBackupText() {
             const str = document.getElementById('import-data').value;
             if(!str) return;
             try {
                 const parsed = JSON.parse(str);
-                if(Array.isArray(parsed)) {
-                    holdings = parsed; // 古い形式の互換
-                } else if (parsed.holdings) {
-                    holdings = parsed.holdings;
-                    historyData = parsed.history || [];
-                    marketPrices = parsed.prices || {};
-                    lastTotalAsset = parsed.lastTotal || 0;
-                }
-                saveData(); initPrices(); updateAllViews();
+                processImportData(parsed);
                 document.getElementById('import-data').value = "";
-                showToast("データの復元に成功しました！", 'success');
             } catch(e) {
                 showToast("正しいデータ形式ではありません", 'error');
             }
+        }
+
+        // 復元処理の共通ロジック
+        function processImportData(parsed) {
+            if(Array.isArray(parsed)) {
+                holdings = parsed; // 古い形式の互換
+            } else if (parsed.holdings) {
+                holdings = parsed.holdings;
+                historyData = parsed.history || [];
+                marketPrices = parsed.prices || {};
+                lastTotalAsset = parsed.lastTotal || 0;
+            }
+            saveData(); 
+            initPrices(); 
+            updateAllViews();
+            showToast("データの復元に成功しました！", 'success');
         }
 
         function saveSettings() {
