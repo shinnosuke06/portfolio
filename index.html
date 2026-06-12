@@ -3,17 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <link rel="apple-touch-icon" href="money.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-title" content="資産管理">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
     <title>資産管理ポートフォリオ</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'Noto Sans JP', 'sans-serif'] }, colors: { primary: '#2563eb' } } } }
     </script>
@@ -55,7 +59,6 @@
         </header>
 
         <div id="content-area" class="flex-1 overflow-auto p-3 md:p-8 bg-slate-50 pb-8 md:pb-8">
-            <!-- 1. ダッシュボード -->
             <div id="view-dashboard" class="space-y-4 md:space-y-6 block max-w-7xl mx-auto">
                 <div class="flex justify-between items-center bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex items-center w-full">
@@ -196,12 +199,12 @@
                     <div class="space-y-4 md:space-y-6">
                         <div class="bg-slate-50 p-3 md:p-4 rounded-lg border border-slate-200">
                             <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">1. Finnhub APIキー (米国株・ETF用 ※任意)</h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-2">未設定でも無料APIで取得を試みます。</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-2">未設定の場合や日本株・投信はGAS経由で取得します。</p>
                             <input type="password" id="api-key-finnhub" placeholder="キーを入力" class="w-full border border-slate-300 rounded p-1.5 md:p-2 outline-none focus:border-primary mb-1 transition-colors text-xs md:text-sm">
                         </div>
                         <div class="bg-blue-50 p-3 md:p-4 rounded-lg border border-blue-100">
-                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">2. カスタムAPI エンドポイント (投資信託用)</h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-2">GASで作成した投信取得ロボットのURLを設定します。</p>
+                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">2. カスタムAPI エンドポイント (日本株・投資信託用)</h3>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-2">GASで作成した株価取得ロボットのURLを設定します。</p>
                             <input type="text" id="api-url-custom" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-blue-200 rounded p-1.5 md:p-2 outline-none focus:border-primary text-[10px] md:text-sm font-mono transition-colors">
                         </div>
                         <div class="bg-emerald-50 p-3 md:p-4 rounded-lg border border-emerald-100 mt-4 relative">
@@ -296,48 +299,42 @@
             const failedCodes = [];
             let errorDetailsText = `--- 取得エラーレポート (${new Date().toLocaleString()}) ---\n`;
             
-            // ★大改修ポイント：日本株と米国株はGASを経由せず、アプリから直接APIを叩く！
-            const stockHoldings = uniqueHoldings.filter(h => h.type === 'US' || h.type === 'JP');
-            if (stockHoldings.length > 0) {
-                await Promise.all(stockHoldings.map(async (h) => {
+            // ★大改修ポイント：Finnhub設定がある米国株以外は、すべて安定のGASルートに任せる
+            const usHoldingsToFinnhub = uniqueHoldings.filter(h => h.type === 'US' && finnhubKey);
+            const gasHoldings = uniqueHoldings.filter(h => h.type === 'JP' || h.type === 'FUND' || (h.type === 'US' && !finnhubKey));
+
+            // Finnhubの処理（設定がある場合のみ）
+            if (usHoldingsToFinnhub.length > 0) {
+                await Promise.all(usHoldingsToFinnhub.map(async (h) => {
                     try {
-                        let url = '';
-                        if (h.type === 'JP') {
-                            url = `https://query1.finance.yahoo.com/v8/finance/chart/${h.code}.T`;
-                        } else {
-                            if (finnhubKey) url = `https://finnhub.io/api/v1/quote?symbol=${h.code}&token=${finnhubKey}`;
-                            else url = `https://query1.finance.yahoo.com/v8/finance/chart/${h.code}`;
-                        }
-                        
-                        const res = await fetch(url);
+                        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${h.code}&token=${finnhubKey}`);
                         if(res.ok) {
                             const data = await res.json();
-                            if (url.includes('finnhub')) {
-                                if(data.c && data.c > 0) marketPrices[h.code] = data.c * fxRate;
-                                else { failedCodes.push(h.code); errorDetailsText += `[${h.code}] Finnhub: 価格データなし\n`; }
-                            } else {
-                                if (data.chart?.result?.length > 0) {
-                                    let price = data.chart.result[0].meta.regularMarketPrice;
-                                    if (h.type === 'US') price = price * fxRate; 
-                                    marketPrices[h.code] = price;
-                                } else { failedCodes.push(h.code); errorDetailsText += `[${h.code}] YahooAPI: 価格データなし\n`; }
-                            }
-                        } else { failedCodes.push(h.code); errorDetailsText += `[${h.code}] 個別株API: 通信拒否(HTTP ${res.status})\n`; }
-                    } catch(e) { failedCodes.push(h.code); errorDetailsText += `[${h.code}] 個別株API: ネットワークエラー\n`; }
+                            if(data.c && data.c > 0) marketPrices[h.code] = data.c * fxRate;
+                            else { failedCodes.push(h.code); errorDetailsText += `[${h.code}] Finnhub API: 価格データなし\n`; }
+                        } else { failedCodes.push(h.code); errorDetailsText += `[${h.code}] Finnhub API: 通信エラー(HTTP ${res.status})\n`; }
+                    } catch(e) { failedCodes.push(h.code); errorDetailsText += `[${h.code}] Finnhub API: ネットワークエラー\n`; }
                 }));
             }
 
-            // ★投資信託のみGASに依頼する
-            const jpFundHoldings = uniqueHoldings.filter(h => h.type === 'FUND');
-            if (jpFundHoldings.length > 0) {
-                if (!customUrl) jpFundHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS連携URL未設定\n`; });
-                else {
+            // ★GASの処理（日本株、投資信託、Finnhub未設定の米国株をすべて処理）
+            if (gasHoldings.length > 0) {
+                if (!customUrl) {
+                    gasHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS連携URL未設定\n`; });
+                } else {
                     try {
-                        const codesStr = jpFundHoldings.map(h => h.code).join(',');
+                        const codesStr = gasHoldings.map(h => h.code).join(',');
                         const res = await fetch(`${customUrl}?codes=${codesStr}`);
                         if(res.ok) {
                             const data = await res.json();
-                            if(data.results) Object.keys(data.results).forEach(code => marketPrices[code] = data.results[code]);
+                            if(data.results) {
+                                Object.keys(data.results).forEach(code => {
+                                    let p = data.results[code];
+                                    const hObj = gasHoldings.find(h => h.code === code);
+                                    if (hObj && hObj.type === 'US') p = p * fxRate; // 米国株なら円換算
+                                    marketPrices[code] = p;
+                                });
+                            }
                             if(data.errors && data.errors.length > 0) {
                                 data.errors.forEach(code => {
                                     failedCodes.push(code);
@@ -347,8 +344,12 @@
                                     errorDetailsText += `[${code}] ${detail}\n`;
                                 });
                             }
-                        } else { jpFundHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS通信エラー(HTTP ${res.status})\n`; }); }
-                    } catch(e) { jpFundHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS連携 ネットワークエラー(${e.message})\n`; }); }
+                        } else { 
+                            gasHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS通信エラー(HTTP ${res.status})\n`; }); 
+                        }
+                    } catch(e) { 
+                        gasHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS連携 ネットワークエラー(${e.message})\n`; }); 
+                    }
                 }
             }
 
@@ -370,7 +371,6 @@
             } else { showToast("最新価格の更新が完了しました！", 'success'); }
         }
 
-        // 以降のUI・グラフ・テーブル処理等はそのまま
         function switchTab(tabId) {
             const titles = { 'dashboard': 'ダッシュボード', 'holdings': '保有資産一覧', 'manage': 'データ管理', 'settings': '設定' };
             document.getElementById('page-title').innerText = titles[tabId];
