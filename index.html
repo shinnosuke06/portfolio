@@ -47,7 +47,6 @@
 </head>
 <body class="flex h-[100dvh] overflow-hidden text-sm md:text-base relative">
 
-    <!-- トースト通知 -->
     <div id="toast-notification" class="fixed top-6 left-1/2 transform -translate-x-1/2 -translate-y-32 opacity-0 transition-all duration-300 z-[100] flex items-center shadow-xl rounded-full px-5 py-3 text-sm md:text-base font-bold pointer-events-none">
         <i id="toast-icon" class="fa-solid fa-circle-notch fa-spin mr-3 text-lg"></i>
         <span id="toast-message">更新中...</span>
@@ -245,7 +244,6 @@
                 </div>
 
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
-                    <!-- 追加: 検索・絞り込み機能 -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-3 gap-3">
                         <h2 class="text-base md:text-lg font-bold text-slate-800">登録データ一覧</h2>
                         <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
@@ -277,7 +275,6 @@
                     </div>
                 </div>
 
-                <!-- 資産推移の履歴管理エリア -->
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h2 class="text-base md:text-lg font-bold text-slate-800">資産推移の履歴管理</h2>
@@ -298,14 +295,12 @@
                     </div>
                 </div>
 
-                <!-- ファイル形式対応バックアップエリア -->
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
                         <h2 class="text-base md:text-lg font-bold text-slate-800">バックアップ・復元</h2>
                     </div>
                     
                     <div class="space-y-5">
-                        <!-- ファイル方式 -->
                         <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
                             <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-file-arrow-down mr-2 text-primary"></i>ファイルで保存・復元 (おすすめ)</h3>
                             <p class="text-[10px] md:text-xs text-slate-500 mb-3">本体にバックアップファイル(.json)をダウンロード、または読み込みます。</p>
@@ -319,7 +314,6 @@
                             </div>
                         </div>
 
-                        <!-- テキスト方式 -->
                         <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
                             <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-copy mr-2 text-slate-500"></i>テキストで保存・復元 (従来の方法)</h3>
                             <p class="text-[10px] md:text-xs text-slate-500 mb-3">文字データをコピーしてメモ帳等に保存、または貼り付けて復元します。</p>
@@ -388,7 +382,7 @@
         </div>
     </main>
 
-    <!-- エラー詳細表示モーダル (NEW!) -->
+    <!-- エラー詳細表示モーダル -->
     <div id="error-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-4 md:p-6 transform transition-all flex flex-col max-h-[80vh]">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
@@ -436,7 +430,6 @@
         const fmtJpy = new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 });
         const fmtNum = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 4 });
         
-        // --- 状態管理 ---
         let holdings = [];
         let marketPrices = {};
         let historyData = [];
@@ -459,7 +452,6 @@
             Chart.defaults.plugins.tooltip.padding = 10;
         };
 
-        // --- スマート通知 (トースト) ---
         let toastTimeout;
         function showToast(msg, type = 'info') {
             const toast = document.getElementById('toast-notification');
@@ -490,7 +482,6 @@
             }
         }
 
-        // エラー詳細モーダル制御用関数 (NEW)
         function closeErrorModal() {
             document.getElementById('error-modal').classList.add('hidden');
         }
@@ -502,7 +493,6 @@
             showToast("エラー詳細をコピーしました", 'success');
         }
 
-        // --- データの読み書き ---
         function loadData() {
             const savedApp = localStorage.getItem('myportfolio_app_data');
             if (savedApp) {
@@ -551,7 +541,6 @@
             return total;
         }
 
-        // --- メイン取得処理 ---
         async function refreshPrices() {
             const icon = document.getElementById('refresh-icon');
             const btn = document.getElementById('refresh-btn');
@@ -585,7 +574,6 @@
             const failedCodes = [];
             let errorDetailsText = `--- 取得エラーレポート (${new Date().toLocaleString()}) ---\n`;
             
-            // 米国株
             const usHoldings = uniqueHoldings.filter(h => h.type === 'US');
             if (usHoldings.length > 0) {
                 if (!finnhubKey) usHoldings.forEach(h => {
@@ -615,7 +603,6 @@
                 }
             }
 
-            // 日本株・投資信託 (GAS連携)
             const jpFundHoldings = uniqueHoldings.filter(h => h.type === 'JP' || h.type === 'FUND');
             if (jpFundHoldings.length > 0) {
                 if (!customUrl) jpFundHoldings.forEach(h => {
@@ -633,8 +620,14 @@
                             if(data.errors && data.errors.length > 0) {
                                 data.errors.forEach(code => {
                                     failedCodes.push(code);
-                                    // GAS側からの詳細エラー情報(errorDetails)を蓄積する
-                                    const detail = data.errorDetails && data.errorDetails[code] ? data.errorDetails[code] : "理由不明エラー";
+                                    // 理由不明エラーを無くすための超強力ログ機能
+                                    let detail = "理由不明エラー";
+                                    if (data.errorDetails && data.errorDetails[code]) {
+                                        detail = data.errorDetails[code];
+                                    } else {
+                                        // GASからエラー詳細が届いていない場合は、生のJSON文字列を出力して証拠を残す
+                                        detail = `詳細データなし (GAS応答: ${JSON.stringify(data).substring(0, 100)}...)`;
+                                    }
                                     errorDetailsText += `[${code}] ${detail}\n`;
                                 });
                             }
@@ -653,7 +646,6 @@
                 }
             }
 
-            // 更新後の履歴保存処理
             const newTotal = calcTotalAssets();
             lastTotalAsset = oldTotal; 
             
@@ -671,7 +663,6 @@
 
             if (failedCodes.length > 0) {
                 showToast(`一部取得失敗`, 'warning');
-                // エラー内容をテキストエリアに流し込み、詳細モーダルを表示する
                 document.getElementById('error-details-text').value = errorDetailsText;
                 document.getElementById('error-modal').classList.remove('hidden');
             } else {
@@ -679,7 +670,6 @@
             }
         }
 
-        // --- UI表示処理 ---
         function switchTab(tabId) {
             const titles = { 'dashboard': 'ダッシュボード', 'holdings': '保有資産一覧', 'manage': 'データ管理', 'settings': '設定' };
             document.getElementById('page-title').innerText = titles[tabId];
@@ -937,7 +927,6 @@
             `;
         }
 
-        // --- データ管理・絞り込み検索 ---
         function renderManageTable() {
             const filterBroker = document.getElementById('manage-broker-filter').value;
             const searchWord = document.getElementById('manage-search-input').value.toLowerCase();
@@ -1132,7 +1121,6 @@
 
         function closeBreakdownModal() { document.getElementById('breakdown-modal').classList.add('hidden'); }
 
-        // --- バックアップ関連（ファイル＆テキスト対応） ---
         function updateBackupTextarea() {
             const dataStr = JSON.stringify({
                 holdings: holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset
