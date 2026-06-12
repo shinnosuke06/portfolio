@@ -3,46 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <!-- PWA用のメタタグ -->
     <link rel="apple-touch-icon" href="money.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-title" content="資産管理">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    
     <title>資産管理ポートフォリオ</title>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'Noto Sans JP', 'sans-serif'] },
-                    colors: { primary: '#2563eb' }
-                }
-            }
-        }
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'Noto Sans JP', 'sans-serif'] }, colors: { primary: '#2563eb' } } } }
     </script>
     <style>
         body { background-color: #f8fafc; color: #1e293b; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
         .tab-active { background-color: #eff6ff; border-left: 4px solid #2563eb; color: #2563eb; font-weight: 600; }
         .tab-inactive { border-left: 4px solid transparent; color: #64748b; }
-        .tab-inactive:hover { background-color: #f8fafc; color: #334155; }
     </style>
 </head>
 <body class="flex h-[100dvh] overflow-hidden text-sm md:text-base relative">
@@ -52,35 +33,20 @@
         <span id="toast-message">更新中...</span>
     </div>
 
-    <!-- サイドバー -->
     <aside class="w-16 md:w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm flex-shrink-0">
         <div class="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-200">
             <i class="fa-solid fa-chart-pie text-primary text-xl md:text-2xl mt-1 md:mt-0"></i>
             <span class="ml-3 font-bold text-lg hidden md:block text-slate-800">MyPortfolio</span>
         </div>
         <nav class="flex-1 py-4 space-y-1">
-            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-active transition-colors">
-                <i class="fa-solid fa-chart-line text-lg w-6 text-center"></i>
-                <span class="ml-3 hidden md:block">ダッシュボード</span>
-            </button>
-            <button onclick="switchTab('holdings')" id="nav-holdings" class="w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-inactive transition-colors">
-                <i class="fa-solid fa-list text-lg w-6 text-center"></i>
-                <span class="ml-3 hidden md:block">保有資産一覧</span>
-            </button>
-            <button onclick="switchTab('manage')" id="nav-manage" class="w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-inactive transition-colors">
-                <i class="fa-solid fa-pen-to-square text-lg w-6 text-center"></i>
-                <span class="ml-3 hidden md:block">データ管理</span>
-            </button>
-            <button onclick="switchTab('settings')" id="nav-settings" class="w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-inactive transition-colors">
-                <i class="fa-solid fa-gear text-lg w-6 text-center"></i>
-                <span class="ml-3 hidden md:block">設定</span>
-            </button>
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-active transition-colors"><i class="fa-solid fa-chart-line text-lg w-6 text-center"></i><span class="ml-3 hidden md:block">ダッシュボード</span></button>
+            <button onclick="switchTab('holdings')" id="nav-holdings" class="w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-inactive transition-colors"><i class="fa-solid fa-list text-lg w-6 text-center"></i><span class="ml-3 hidden md:block">保有資産一覧</span></button>
+            <button onclick="switchTab('manage')" id="nav-manage" class="w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-inactive transition-colors"><i class="fa-solid fa-pen-to-square text-lg w-6 text-center"></i><span class="ml-3 hidden md:block">データ管理</span></button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-inactive transition-colors"><i class="fa-solid fa-gear text-lg w-6 text-center"></i><span class="ml-3 hidden md:block">設定</span></button>
         </nav>
     </aside>
 
-    <!-- メインコンテンツ -->
     <main class="flex-1 flex flex-col h-[100dvh] overflow-hidden relative">
-        
         <header class="h-16 min-h-[4rem] flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white z-10 shadow-sm flex-shrink-0">
             <h1 id="page-title" class="text-lg md:text-xl font-bold text-slate-800 truncate pr-2">ダッシュボード</h1>
             <button onclick="refreshPrices()" id="refresh-btn" class="p-2 md:px-4 rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center border border-slate-200 shadow-sm flex-shrink-0">
@@ -89,15 +55,12 @@
         </header>
 
         <div id="content-area" class="flex-1 overflow-auto p-3 md:p-8 bg-slate-50 pb-8 md:pb-8">
-            
-            <!-- ====== 1. ダッシュボード ====== -->
+            <!-- 1. ダッシュボード -->
             <div id="view-dashboard" class="space-y-4 md:space-y-6 block max-w-7xl mx-auto">
                 <div class="flex justify-between items-center bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex items-center w-full">
                         <label for="dash-broker-filter" class="text-slate-600 font-medium mr-2 md:mr-3 text-xs md:text-sm whitespace-nowrap">表示対象:</label>
-                        <select id="dash-broker-filter" onchange="updateAllViews()" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs md:text-sm rounded-lg focus:ring-primary focus:border-primary block p-1.5 md:p-2 outline-none flex-1 max-w-xs">
-                            <option value="ALL">全体 (合算)</option>
-                        </select>
+                        <select id="dash-broker-filter" onchange="updateAllViews()" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs md:text-sm rounded-lg focus:ring-primary focus:border-primary block p-1.5 md:p-2 outline-none flex-1 max-w-xs"><option value="ALL">全体 (合算)</option></select>
                     </div>
                 </div>
 
@@ -106,27 +69,16 @@
                         <div class="absolute -right-4 -top-4 text-slate-100"><i class="fa-solid fa-wallet text-8xl"></i></div>
                         <h2 class="text-slate-500 text-xs md:text-sm font-medium mb-1 relative z-10">総資産額</h2>
                         <div class="text-2xl md:text-3xl font-bold text-slate-800 mb-2 relative z-10" id="dash-total-assets">¥0</div>
-                        
                         <div class="flex flex-col space-y-1.5 relative z-10 mt-2">
-                            <div class="flex items-center text-xs md:text-sm">
-                                <span id="dash-total-profit" class="font-medium flex items-center">¥0 (0.00%)</span>
-                                <span class="text-slate-500 ml-2">評価損益</span>
-                            </div>
-                            <div class="flex items-center text-xs md:text-sm">
-                                <span id="dash-diff-prev" class="font-medium flex items-center text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">--</span>
-                                <span class="text-slate-500 ml-2">前回更新比</span>
-                            </div>
+                            <div class="flex items-center text-xs md:text-sm"><span id="dash-total-profit" class="font-medium flex items-center">¥0 (0.00%)</span><span class="text-slate-500 ml-2">評価損益</span></div>
+                            <div class="flex items-center text-xs md:text-sm"><span id="dash-diff-prev" class="font-medium flex items-center text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">--</span><span class="text-slate-500 ml-2">前回更新比</span></div>
                         </div>
                     </div>
-                    
                     <div class="md:col-span-2 bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm">
                         <h2 class="text-slate-500 text-xs md:text-sm font-medium mb-4">証券会社別 資産状況</h2>
                         <div class="flex flex-col lg:flex-row gap-4 md:gap-6">
-                            <div class="relative h-40 md:h-48 w-full lg:w-1/2 flex justify-center">
-                                <canvas id="brokerChart"></canvas>
-                            </div>
-                            <div class="w-full lg:w-1/2 overflow-y-auto max-h-48 pr-1 md:pr-2" id="dash-broker-list">
-                            </div>
+                            <div class="relative h-40 md:h-48 w-full lg:w-1/2 flex justify-center"><canvas id="brokerChart"></canvas></div>
+                            <div class="w-full lg:w-1/2 overflow-y-auto max-h-48 pr-1 md:pr-2" id="dash-broker-list"></div>
                         </div>
                     </div>
                 </div>
@@ -134,111 +86,57 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div class="bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm">
                         <h2 class="text-slate-500 text-xs md:text-sm font-medium mb-4">アセットクラス比率</h2>
-                        <div class="relative h-40 md:h-48 w-full flex justify-center">
-                            <canvas id="typeChart"></canvas>
-                        </div>
+                        <div class="relative h-40 md:h-48 w-full flex justify-center"><canvas id="typeChart"></canvas></div>
                     </div>
-                    
                     <div class="bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm flex flex-col">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-slate-500 text-xs md:text-sm font-medium">実際の資産推移</h2>
                             <select id="dash-history-period" onchange="renderDashboard()" class="bg-slate-50 border border-slate-300 text-slate-700 text-[10px] md:text-xs rounded-md p-1 outline-none cursor-pointer">
-                                <option value="7d">1週間</option>
-                                <option value="1m">1ヶ月</option>
-                                <option value="1y">1年</option>
-                                <option value="all">全て</option>
+                                <option value="7d">1週間</option><option value="1m">1ヶ月</option><option value="1y">1年</option><option value="all">全て</option>
                             </select>
                         </div>
-                        <div class="relative flex-1 min-h-[10rem] md:min-h-[12rem] w-full flex justify-center">
-                            <canvas id="historyChart"></canvas>
-                        </div>
+                        <div class="relative flex-1 min-h-[10rem] md:min-h-[12rem] w-full flex justify-center"><canvas id="historyChart"></canvas></div>
                     </div>
                 </div>
             </div>
 
-            <!-- ====== 2. 保有資産一覧 ====== -->
+            <!-- 2. 保有資産一覧 -->
             <div id="view-holdings" class="space-y-4 md:space-y-6 hidden max-w-7xl mx-auto">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4 bg-white p-3 md:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex items-center w-full">
                         <label for="broker-filter" class="text-slate-600 font-medium mr-2 md:mr-3 text-xs md:text-sm whitespace-nowrap">表示対象:</label>
-                        <select id="broker-filter" onchange="renderHoldingsTable()" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs md:text-sm rounded-lg focus:ring-primary focus:border-primary block p-1.5 md:p-2 outline-none flex-1 max-w-xs">
-                            <option value="ALL">全体 (同一銘柄・同口座は合算)</option>
-                        </select>
+                        <select id="broker-filter" onchange="renderHoldingsTable()" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs md:text-sm rounded-lg focus:ring-primary focus:border-primary block p-1.5 md:p-2 outline-none flex-1 max-w-xs"><option value="ALL">全体 (同一銘柄・同口座は合算)</option></select>
                     </div>
                     <div class="text-[10px] md:text-sm text-slate-500">※ 全体表示の場合、平均単価は加重平均で計算されます。</div>
                 </div>
-
                 <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[800px] md:min-w-[950px] text-xs md:text-sm">
                         <thead>
                             <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
-                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium">証券会社</th>
-                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium">口座・種類</th>
-                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium">銘柄 / ファンド名</th>
-                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">現在値</th>
-                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">保有数量</th>
-                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">平均取得単価</th>
-                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">評価額 / 手残り予想</th>
-                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">評価損益</th>
+                                <th class="px-4 md:px-6 py-2 md:py-3 font-medium">証券会社</th><th class="px-4 md:px-6 py-2 md:py-3 font-medium">口座・種類</th><th class="px-4 md:px-6 py-2 md:py-3 font-medium">銘柄 / ファンド名</th><th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">現在値</th><th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">保有数量</th><th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">平均取得単価</th><th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">評価額 / 手残り予想</th><th class="px-4 md:px-6 py-2 md:py-3 font-medium text-right">評価損益</th>
                             </tr>
                         </thead>
-                        <tbody id="holdings-tbody" class="divide-y divide-slate-200">
-                        </tbody>
-                        <tfoot class="bg-slate-50 border-t border-slate-200 font-bold" id="holdings-tfoot">
-                        </tfoot>
+                        <tbody id="holdings-tbody" class="divide-y divide-slate-200"></tbody>
+                        <tfoot class="bg-slate-50 border-t border-slate-200 font-bold" id="holdings-tfoot"></tfoot>
                     </table>
                 </div>
             </div>
 
-            <!-- ====== 3. データ管理 ====== -->
+            <!-- 3. データ管理 -->
             <div id="view-manage" class="space-y-4 md:space-y-6 hidden max-w-7xl mx-auto">
-                
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm relative" id="manage-form-container">
                     <h2 class="text-base md:text-lg font-bold text-slate-800 mb-4 border-b pb-2" id="manage-form-title">新規データの追加</h2>
                     <form id="add-form" onsubmit="handleAddSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 items-end">
-                        <div>
-                            <label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">証券会社</label>
-                            <input type="text" id="add-broker" required placeholder="例: SBI証券" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">口座区分</label>
-                            <select id="add-account" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors">
-                                <option value="特定">特定</option>
-                                <option value="一般">一般</option>
-                                <option value="NISA">NISA</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">資産クラス</label>
-                            <select id="add-type" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors">
-                                <option value="JP">国内株</option>
-                                <option value="US">米国株 (ETF等含む)</option>
-                                <option value="FUND">投資信託</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">銘柄/ファンドコード</label>
-                            <input type="text" id="add-code" required placeholder="例: 7203" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary uppercase transition-colors">
-                        </div>
-                        <div class="sm:col-span-2 lg:col-span-1">
-                            <label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">銘柄/ファンド名</label>
-                            <input type="text" id="add-name" required placeholder="例: トヨタ自動車" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">数量 <span class="text-[9px] text-slate-400">(投信は 口数÷1万)</span></label>
-                            <input type="number" id="add-qty" required min="0.0001" step="any" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">平均取得単価 (円)</label>
-                            <input type="number" id="add-price" required min="0" step="any" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors">
-                        </div>
+                        <div><label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">証券会社</label><input type="text" id="add-broker" required placeholder="例: SBI証券" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors"></div>
+                        <div><label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">口座区分</label><select id="add-account" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors"><option value="特定">特定</option><option value="一般">一般</option><option value="NISA">NISA</option></select></div>
+                        <div><label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">資産クラス</label><select id="add-type" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors"><option value="JP">国内株</option><option value="US">米国株 (ETF等含む)</option><option value="FUND">投資信託</option></select></div>
+                        <div><label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">銘柄/ファンドコード</label><input type="text" id="add-code" required placeholder="例: 7203" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary uppercase transition-colors"></div>
+                        <div class="sm:col-span-2 lg:col-span-1"><label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">銘柄/ファンド名</label><input type="text" id="add-name" required placeholder="例: トヨタ自動車" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors"></div>
+                        <div><label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">数量 <span class="text-[9px] text-slate-400">(投信は 口数÷1万)</span></label><input type="number" id="add-qty" required min="0.0001" step="any" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors"></div>
+                        <div><label class="block text-[10px] md:text-xs font-medium text-slate-600 mb-1">平均取得単価 (円)</label><input type="number" id="add-price" required min="0" step="any" class="w-full border border-slate-300 rounded p-1.5 md:p-2 text-xs md:text-sm outline-none focus:border-primary transition-colors"></div>
                         <div class="flex flex-col space-y-2 sm:col-span-2 lg:col-span-1">
-                            <button type="submit" id="add-submit-btn" class="w-full bg-primary hover:bg-blue-700 text-white font-medium py-1.5 md:py-2 px-4 rounded transition-colors shadow-sm text-sm">
-                                <i class="fa-solid fa-plus mr-1"></i> 追加
-                            </button>
-                            <button type="button" id="edit-cancel-btn" onclick="cancelEdit()" class="hidden w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-1.5 md:py-2 px-4 rounded transition-colors text-sm">
-                                キャンセル
-                            </button>
+                            <button type="submit" id="add-submit-btn" class="w-full bg-primary hover:bg-blue-700 text-white font-medium py-1.5 md:py-2 px-4 rounded transition-colors shadow-sm text-sm"><i class="fa-solid fa-plus mr-1"></i> 追加</button>
+                            <button type="button" id="edit-cancel-btn" onclick="cancelEdit()" class="hidden w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-1.5 md:py-2 px-4 rounded transition-colors text-sm">キャンセル</button>
                         </div>
                     </form>
                 </div>
@@ -247,132 +145,71 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-3 gap-3">
                         <h2 class="text-base md:text-lg font-bold text-slate-800">登録データ一覧</h2>
                         <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-                            <div class="relative w-full sm:w-48">
-                                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 md:top-2.5 text-slate-400 text-xs"></i>
-                                <input type="text" id="manage-search-input" oninput="renderManageTable()" placeholder="銘柄名・コードで検索" class="w-full pl-7 bg-slate-50 border border-slate-300 text-slate-800 text-[10px] md:text-xs rounded-lg p-1.5 md:p-2 outline-none focus:border-primary transition-colors">
-                            </div>
-                            <select id="manage-broker-filter" onchange="renderManageTable()" class="bg-slate-50 border border-slate-300 text-slate-800 text-[10px] md:text-xs rounded-lg p-1.5 md:p-2 outline-none w-full sm:w-auto focus:border-primary">
-                                <option value="ALL">全ての証券会社</option>
-                            </select>
+                            <div class="relative w-full sm:w-48"><i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 md:top-2.5 text-slate-400 text-xs"></i><input type="text" id="manage-search-input" oninput="renderManageTable()" placeholder="銘柄名・コードで検索" class="w-full pl-7 bg-slate-50 border border-slate-300 text-slate-800 text-[10px] md:text-xs rounded-lg p-1.5 md:p-2 outline-none focus:border-primary transition-colors"></div>
+                            <select id="manage-broker-filter" onchange="renderManageTable()" class="bg-slate-50 border border-slate-300 text-slate-800 text-[10px] md:text-xs rounded-lg p-1.5 md:p-2 outline-none w-full sm:w-auto focus:border-primary"><option value="ALL">全ての証券会社</option></select>
                         </div>
                     </div>
-                    
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse min-w-[600px] md:min-w-[700px] text-xs md:text-sm">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-600">
-                                    <th class="px-3 md:px-4 py-2">証券会社</th>
-                                    <th class="px-3 md:px-4 py-2">種類</th>
-                                    <th class="px-3 md:px-4 py-2">銘柄</th>
-                                    <th class="px-3 md:px-4 py-2 text-right">数量</th>
-                                    <th class="px-3 md:px-4 py-2 text-right">取得単価</th>
-                                    <th class="px-3 md:px-4 py-2 text-center">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="manage-tbody" class="divide-y divide-slate-200">
-                            </tbody>
+                            <thead><tr class="bg-slate-100 text-slate-600"><th class="px-3 md:px-4 py-2">証券会社</th><th class="px-3 md:px-4 py-2">種類</th><th class="px-3 md:px-4 py-2">銘柄</th><th class="px-3 md:px-4 py-2 text-right">数量</th><th class="px-3 md:px-4 py-2 text-right">取得単価</th><th class="px-3 md:px-4 py-2 text-center">操作</th></tr></thead>
+                            <tbody id="manage-tbody" class="divide-y divide-slate-200"></tbody>
                         </table>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h2 class="text-base md:text-lg font-bold text-slate-800">資産推移の履歴管理</h2>
-                    </div>
+                    <div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-base md:text-lg font-bold text-slate-800">資産推移の履歴管理</h2></div>
                     <p class="text-xs md:text-sm text-slate-600 mb-4">グラフに表示される過去の総資産額の記録を削除できます。誤って更新してしまった場合などにご利用ください。</p>
                     <div class="overflow-x-auto max-h-60 overflow-y-auto">
                         <table class="w-full text-left border-collapse min-w-[300px] text-xs md:text-sm">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm">
-                                    <th class="px-3 md:px-4 py-2">日付</th>
-                                    <th class="px-3 md:px-4 py-2 text-right">総資産額</th>
-                                    <th class="px-3 md:px-4 py-2 text-center w-20">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="manage-history-tbody" class="divide-y divide-slate-200">
-                            </tbody>
+                            <thead><tr class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm"><th class="px-3 md:px-4 py-2">日付</th><th class="px-3 md:px-4 py-2 text-right">総資産額</th><th class="px-3 md:px-4 py-2 text-center w-20">操作</th></tr></thead>
+                            <tbody id="manage-history-tbody" class="divide-y divide-slate-200"></tbody>
                         </table>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <h2 class="text-base md:text-lg font-bold text-slate-800">バックアップ・復元</h2>
-                    </div>
-                    
+                    <div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-base md:text-lg font-bold text-slate-800">バックアップ・復元</h2></div>
                     <div class="space-y-5">
                         <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
                             <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-file-arrow-down mr-2 text-primary"></i>ファイルで保存・復元 (おすすめ)</h3>
                             <p class="text-[10px] md:text-xs text-slate-500 mb-3">本体にバックアップファイル(.json)をダウンロード、または読み込みます。</p>
                             <div class="flex flex-col sm:flex-row gap-3">
-                                <button onclick="downloadBackupFile()" class="bg-primary hover:bg-blue-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors flex items-center justify-center whitespace-nowrap">
-                                    <i class="fa-solid fa-download mr-2"></i>ダウンロード
-                                </button>
-                                <div class="relative flex-1">
-                                    <input type="file" id="file-upload" accept=".json" onchange="uploadBackupFile(event)" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded bg-white">
-                                </div>
+                                <button onclick="downloadBackupFile()" class="bg-primary hover:bg-blue-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors flex items-center justify-center whitespace-nowrap"><i class="fa-solid fa-download mr-2"></i>ダウンロード</button>
+                                <div class="relative flex-1"><input type="file" id="file-upload" accept=".json" onchange="uploadBackupFile(event)" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded bg-white"></div>
                             </div>
                         </div>
-
                         <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
                             <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-copy mr-2 text-slate-500"></i>テキストで保存・復元 (従来の方法)</h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-3">文字データをコピーしてメモ帳等に保存、または貼り付けて復元します。</p>
-                            
-                            <div class="relative mb-3">
-                                <textarea id="backup-data" class="w-full h-16 md:h-20 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" readonly></textarea>
-                                <button onclick="copyBackupText()" class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 rounded hover:bg-slate-700 shadow-sm">
-                                    <i class="fa-regular fa-copy mr-1"></i> コピー
-                                </button>
-                            </div>
-                            
-                            <div class="flex gap-2">
-                                <textarea id="import-data" class="w-full h-10 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" placeholder="ここに文字データを貼り付け..."></textarea>
-                                <button onclick="importBackupText()" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors shadow-sm whitespace-nowrap">
-                                    復元する
-                                </button>
-                            </div>
+                            <div class="relative mb-3"><textarea id="backup-data" class="w-full h-16 md:h-20 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" readonly></textarea><button onclick="copyBackupText()" class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 rounded hover:bg-slate-700 shadow-sm"><i class="fa-regular fa-copy mr-1"></i> コピー</button></div>
+                            <div class="flex gap-2"><textarea id="import-data" class="w-full h-10 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" placeholder="ここに文字データを貼り付け..."></textarea><button onclick="importBackupText()" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors shadow-sm whitespace-nowrap">復元する</button></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- ====== 4. 設定 ====== -->
+            <!-- 4. 設定 -->
             <div id="view-settings" class="space-y-4 md:space-y-6 hidden max-w-3xl mx-auto">
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
                     <h2 class="text-base md:text-lg font-bold text-slate-800 mb-4 border-b pb-2">API連携・外部データ設定</h2>
-                    <p class="text-xs md:text-sm text-slate-600 mb-4 md:mb-6">
-                        実際の株価を取得するための設定を行います。入力された情報はブラウザ内にのみ保存されます。
-                    </p>
-                    
+                    <p class="text-xs md:text-sm text-slate-600 mb-4 md:mb-6">実際の株価を取得するための設定を行います。入力された情報はブラウザ内にのみ保存されます。</p>
                     <div class="space-y-4 md:space-y-6">
                         <div class="bg-slate-50 p-3 md:p-4 rounded-lg border border-slate-200">
-                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">1. Finnhub APIキー (米国株・ETF用)</h3>
+                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">1. Finnhub APIキー (米国株・ETF用 ※任意)</h3>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-2">未設定でも無料APIで取得を試みます。</p>
                             <input type="password" id="api-key-finnhub" placeholder="キーを入力" class="w-full border border-slate-300 rounded p-1.5 md:p-2 outline-none focus:border-primary mb-1 transition-colors text-xs md:text-sm">
                         </div>
-
                         <div class="bg-blue-50 p-3 md:p-4 rounded-lg border border-blue-100">
-                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">2. カスタムAPI エンドポイント (日本株・投資信託用)</h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-2">GASで作成した株価・投信取得ロボットのURLを設定します。</p>
+                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2">2. カスタムAPI エンドポイント (投資信託用)</h3>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-2">GASで作成した投信取得ロボットのURLを設定します。</p>
                             <input type="text" id="api-url-custom" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-blue-200 rounded p-1.5 md:p-2 outline-none focus:border-primary text-[10px] md:text-sm font-mono transition-colors">
                         </div>
-
                         <div class="bg-emerald-50 p-3 md:p-4 rounded-lg border border-emerald-100 mt-4 relative">
-                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2 flex items-center">
-                                3. 計算用 為替レート (USD/JPY)
-                                <span class="ml-2 bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">自動取得対応</span>
-                            </h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-2 md:mb-3">更新ボタンを押すと、最新のレートを自動で取得して保存します。</p>
-                            <div class="flex items-center text-xs md:text-sm">
-                                <span class="mr-2 text-slate-700 font-bold">1ドル = </span>
-                                <input type="number" id="setting-fx-rate" step="0.01" placeholder="150" class="w-24 md:w-32 border border-slate-300 rounded p-1.5 md:p-2 outline-none focus:border-primary transition-colors text-right font-bold">
-                                <span class="ml-2 text-slate-700 font-bold">円</span>
-                            </div>
+                            <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2 flex items-center">3. 計算用 為替レート (USD/JPY) <span class="ml-2 bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">自動取得対応</span></h3>
+                            <div class="flex items-center text-xs md:text-sm"><span class="mr-2 text-slate-700 font-bold">1ドル = </span><input type="number" id="setting-fx-rate" step="0.01" placeholder="150" class="w-24 md:w-32 border border-slate-300 rounded p-1.5 md:p-2 outline-none focus:border-primary transition-colors text-right font-bold"><span class="ml-2 text-slate-700 font-bold">円</span></div>
                         </div>
-                        
                         <div class="pt-4 border-t border-slate-200 flex items-center">
-                            <button onclick="saveSettings()" class="bg-primary hover:bg-blue-700 text-white text-sm font-medium py-1.5 md:py-2 px-4 md:px-6 rounded transition-colors shadow-sm">
-                                設定を保存
-                            </button>
+                            <button onclick="saveSettings()" class="bg-primary hover:bg-blue-700 text-white text-sm font-medium py-1.5 md:py-2 px-4 md:px-6 rounded transition-colors shadow-sm">設定を保存</button>
                             <span id="save-msg" class="ml-3 text-emerald-600 text-xs md:text-sm font-bold opacity-0 transition-opacity">保存しました！</span>
                         </div>
                     </div>
@@ -382,45 +219,24 @@
         </div>
     </main>
 
-    <!-- エラー詳細表示モーダル -->
+    <!-- モーダル群 -->
     <div id="error-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-4 md:p-6 transform transition-all flex flex-col max-h-[80vh]">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 class="text-base md:text-lg font-bold text-rose-600 flex items-center"><i class="fa-solid fa-triangle-exclamation mr-2"></i>取得エラー詳細</h3>
-                <button onclick="closeErrorModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
+            <div class="flex justify-between items-center mb-4 border-b pb-2"><h3 class="text-base md:text-lg font-bold text-rose-600 flex items-center"><i class="fa-solid fa-triangle-exclamation mr-2"></i>取得エラー詳細</h3><button onclick="closeErrorModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button></div>
             <p class="text-xs md:text-sm text-slate-600 mb-2">一部の銘柄で価格の取得に失敗しました。以下のテキストをコピーし、原因究明のためにお知らせください。</p>
-            <div class="relative flex-1 overflow-hidden flex flex-col min-h-[150px]">
-                <textarea id="error-details-text" class="w-full flex-1 p-2 md:p-3 text-[10px] md:text-xs font-mono bg-slate-50 border border-slate-300 rounded outline-none focus:border-rose-400 resize-none overflow-y-auto" readonly></textarea>
-                <button onclick="copyErrorDetails()" class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 md:px-3 rounded hover:bg-slate-700 shadow-sm">
-                    <i class="fa-regular fa-copy mr-1"></i> コピー
-                </button>
-            </div>
-            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
-                <button onclick="closeErrorModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 font-medium transition-colors text-sm">閉じる</button>
-            </div>
+            <div class="relative flex-1 overflow-hidden flex flex-col min-h-[150px]"><textarea id="error-details-text" class="w-full flex-1 p-2 md:p-3 text-[10px] md:text-xs font-mono bg-slate-50 border border-slate-300 rounded outline-none focus:border-rose-400 resize-none overflow-y-auto" readonly></textarea><button onclick="copyErrorDetails()" class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 md:px-3 rounded hover:bg-slate-700 shadow-sm"><i class="fa-regular fa-copy mr-1"></i> コピー</button></div>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end"><button onclick="closeErrorModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 font-medium transition-colors text-sm">閉じる</button></div>
         </div>
     </div>
-
-    <!-- 削除確認モーダル等 -->
     <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-4 md:p-6 transform transition-all">
-            <h3 class="text-base md:text-lg font-bold text-slate-800 mb-2">データの削除</h3>
-            <p class="text-xs md:text-sm text-slate-600 mb-6" id="delete-modal-text"></p>
-            <div class="flex justify-end space-x-3">
-                <button onclick="closeDeleteModal()" class="px-3 py-1.5 md:px-4 md:py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 font-medium transition-colors text-xs md:text-sm">キャンセル</button>
-                <button onclick="executeDelete()" class="px-3 py-1.5 md:px-4 md:py-2 bg-rose-600 text-white rounded hover:bg-rose-700 font-medium transition-colors shadow-sm text-xs md:text-sm">削除する</button>
-            </div>
+            <h3 class="text-base md:text-lg font-bold text-slate-800 mb-2">データの削除</h3><p class="text-xs md:text-sm text-slate-600 mb-6" id="delete-modal-text"></p>
+            <div class="flex justify-end space-x-3"><button onclick="closeDeleteModal()" class="px-3 py-1.5 md:px-4 md:py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 font-medium transition-colors text-xs md:text-sm">キャンセル</button><button onclick="executeDelete()" class="px-3 py-1.5 md:px-4 md:py-2 bg-rose-600 text-white rounded hover:bg-rose-700 font-medium transition-colors shadow-sm text-xs md:text-sm">削除する</button></div>
         </div>
     </div>
-
-    <!-- 内訳モーダル -->
     <div id="breakdown-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6 transform transition-all">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 class="text-base md:text-lg font-bold text-slate-800" id="breakdown-title">内訳</h3>
-                <button onclick="closeBreakdownModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            </div>
+            <div class="flex justify-between items-center mb-4 border-b pb-2"><h3 class="text-base md:text-lg font-bold text-slate-800" id="breakdown-title">内訳</h3><button onclick="closeBreakdownModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button></div>
             <div id="breakdown-content" class="space-y-1 mb-6 max-h-[50vh] overflow-y-auto pr-2"></div>
             <button onclick="closeBreakdownModal()" class="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 font-medium transition-colors text-sm">閉じる</button>
         </div>
@@ -430,185 +246,91 @@
         const fmtJpy = new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', maximumFractionDigits: 0 });
         const fmtNum = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 4 });
         
-        let holdings = [];
-        let marketPrices = {};
-        let historyData = [];
-        let lastTotalAsset = 0;
-        
+        let holdings = [], marketPrices = {}, historyData = [], lastTotalAsset = 0;
         let charts = { broker: null, type: null, history: null };
-        let deleteTargetId = null; 
-        let editTargetId = null;   
-        let deleteTargetType = 'holding'; 
+        let deleteTargetId = null, editTargetId = null, deleteTargetType = 'holding'; 
 
-        window.onload = () => {
-            loadData();
-            loadSettings();
-            initPrices();
-            updateAllViews();
-            
-            Chart.defaults.font.family = "'Inter', 'Noto Sans JP', sans-serif";
-            Chart.defaults.color = '#64748b';
-            Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
-            Chart.defaults.plugins.tooltip.padding = 10;
-        };
+        window.onload = () => { loadData(); loadSettings(); initPrices(); updateAllViews(); Chart.defaults.font.family = "'Inter', 'Noto Sans JP', sans-serif"; Chart.defaults.color = '#64748b'; Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)'; Chart.defaults.plugins.tooltip.padding = 10; };
 
         let toastTimeout;
         function showToast(msg, type = 'info') {
-            const toast = document.getElementById('toast-notification');
-            const icon = document.getElementById('toast-icon');
-            const msgEl = document.getElementById('toast-message');
-            
-            clearTimeout(toastTimeout);
-            msgEl.innerHTML = msg;
-            
+            const toast = document.getElementById('toast-notification'), icon = document.getElementById('toast-icon'), msgEl = document.getElementById('toast-message');
+            clearTimeout(toastTimeout); msgEl.innerHTML = msg;
             toast.className = "fixed top-6 left-1/2 transform -translate-x-1/2 transition-all duration-300 z-[100] flex items-center shadow-xl px-5 py-3 text-sm md:text-base font-bold pointer-events-none translate-y-0 opacity-100";
-            
-            if (type === 'success') {
-                toast.classList.add('bg-emerald-600', 'text-white', 'rounded-full');
-                icon.className = "fa-solid fa-circle-check mr-3 text-lg";
-            } else if (type === 'warning' || type === 'error') {
-                toast.classList.add('bg-rose-600', 'text-white', 'rounded-xl');
-                icon.className = "fa-solid fa-triangle-exclamation mr-3 text-lg";
-            } else {
-                toast.classList.add('bg-slate-800', 'text-white', 'rounded-full');
-                icon.className = "fa-solid fa-circle-notch fa-spin mr-3 text-lg";
-            }
-            
-            if (type !== 'info') {
-                toastTimeout = setTimeout(() => {
-                    toast.classList.replace('translate-y-0', '-translate-y-32');
-                    toast.classList.replace('opacity-100', 'opacity-0');
-                }, type === 'warning' ? 4000 : 3000);
-            }
+            if (type === 'success') { toast.classList.add('bg-emerald-600', 'text-white', 'rounded-full'); icon.className = "fa-solid fa-circle-check mr-3 text-lg"; }
+            else if (type === 'warning' || type === 'error') { toast.classList.add('bg-rose-600', 'text-white', 'rounded-xl'); icon.className = "fa-solid fa-triangle-exclamation mr-3 text-lg"; }
+            else { toast.classList.add('bg-slate-800', 'text-white', 'rounded-full'); icon.className = "fa-solid fa-circle-notch fa-spin mr-3 text-lg"; }
+            if (type !== 'info') toastTimeout = setTimeout(() => { toast.classList.replace('translate-y-0', '-translate-y-32'); toast.classList.replace('opacity-100', 'opacity-0'); }, type === 'warning' ? 4000 : 3000);
         }
 
-        function closeErrorModal() {
-            document.getElementById('error-modal').classList.add('hidden');
-        }
-
-        function copyErrorDetails() {
-            const textarea = document.getElementById('error-details-text');
-            textarea.select();
-            document.execCommand('copy');
-            showToast("エラー詳細をコピーしました", 'success');
-        }
+        function closeErrorModal() { document.getElementById('error-modal').classList.add('hidden'); }
+        function copyErrorDetails() { document.getElementById('error-details-text').select(); document.execCommand('copy'); showToast("エラー詳細をコピーしました", 'success'); }
 
         function loadData() {
             const savedApp = localStorage.getItem('myportfolio_app_data');
-            if (savedApp) {
-                try {
-                    const parsed = JSON.parse(savedApp);
-                    holdings = parsed.holdings || [];
-                    historyData = parsed.history || [];
-                    marketPrices = parsed.prices || {};
-                    lastTotalAsset = parsed.lastTotal || 0;
-                } catch(e) { fallbackLoad(); }
-            } else {
-                fallbackLoad();
-            }
-            
-            holdings = holdings.map(h => ({ 
-                ...h, 
-                accountType: h.accountType || "特定",
-                type: h.type || (h.code.match(/^[A-Z]/) ? 'US' : 'JP')
-            }));
-            
-            updateBrokerFilterOptions();
-            updateBackupTextarea();
+            if (savedApp) { try { const parsed = JSON.parse(savedApp); holdings = parsed.holdings || []; historyData = parsed.history || []; marketPrices = parsed.prices || {}; lastTotalAsset = parsed.lastTotal || 0; } catch(e) { fallbackLoad(); } } else fallbackLoad();
+            holdings = holdings.map(h => ({ ...h, accountType: h.accountType || "特定", type: h.type || (h.code.match(/^[A-Z]/) ? 'US' : 'JP') }));
+            updateBrokerFilterOptions(); updateBackupTextarea();
         }
-
-        function fallbackLoad() {
-            const oldSaved = localStorage.getItem('myportfolio_data');
-            if (oldSaved) holdings = JSON.parse(oldSaved);
-        }
-
-        function saveData() {
-            const appData = { holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset };
-            localStorage.setItem('myportfolio_app_data', JSON.stringify(appData));
-            updateBrokerFilterOptions();
-            updateBackupTextarea();
-        }
-
-        function initPrices() {
-            holdings.forEach(h => {
-                if (!marketPrices[h.code]) marketPrices[h.code] = h.avgPrice;
-            });
-        }
-
-        function calcTotalAssets() {
-            let total = 0;
-            holdings.forEach(h => { total += (marketPrices[h.code] || h.avgPrice) * h.quantity; });
-            return total;
-        }
+        function fallbackLoad() { const oldSaved = localStorage.getItem('myportfolio_data'); if (oldSaved) holdings = JSON.parse(oldSaved); }
+        function saveData() { localStorage.setItem('myportfolio_app_data', JSON.stringify({ holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset })); updateBrokerFilterOptions(); updateBackupTextarea(); }
+        function initPrices() { holdings.forEach(h => { if (!marketPrices[h.code]) marketPrices[h.code] = h.avgPrice; }); }
+        function calcTotalAssets() { let total = 0; holdings.forEach(h => { total += (marketPrices[h.code] || h.avgPrice) * h.quantity; }); return total; }
 
         async function refreshPrices() {
-            const icon = document.getElementById('refresh-icon');
-            const btn = document.getElementById('refresh-btn');
-            
-            btn.classList.add('pointer-events-none', 'opacity-70');
-            icon.classList.add('fa-spin');
-            showToast("最新価格を取得中..."); 
+            const icon = document.getElementById('refresh-icon'), btn = document.getElementById('refresh-btn');
+            btn.classList.add('pointer-events-none', 'opacity-70'); icon.classList.add('fa-spin'); showToast("最新価格を取得中..."); 
             
             const oldTotal = calcTotalAssets();
             let fxRate = parseFloat(localStorage.getItem('setting_fx_rate')) || 150.0;
             try {
                 const fxRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                if (fxRes.ok) {
-                    const fxData = await fxRes.json();
-                    if (fxData && fxData.rates && fxData.rates.JPY) {
-                        fxRate = fxData.rates.JPY;
-                        document.getElementById('setting-fx-rate').value = fxRate.toFixed(2);
-                        localStorage.setItem('setting_fx_rate', fxRate.toFixed(2));
-                    }
-                }
+                if (fxRes.ok) { const fxData = await fxRes.json(); if (fxData?.rates?.JPY) { fxRate = fxData.rates.JPY; document.getElementById('setting-fx-rate').value = fxRate.toFixed(2); localStorage.setItem('setting_fx_rate', fxRate.toFixed(2)); } }
             } catch(e) {}
             
             const finnhubKey = localStorage.getItem('api_key_finnhub');
             const customUrl = localStorage.getItem('api_url_custom');
-            
             const uniqueHoldings = [];
-            holdings.forEach(h => {
-                if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) uniqueHoldings.push({ code: h.code, type: h.type });
-            });
+            holdings.forEach(h => { if(!uniqueHoldings.find(u => u.code === h.code && u.type === h.type)) uniqueHoldings.push({ code: h.code, type: h.type }); });
 
             const failedCodes = [];
             let errorDetailsText = `--- 取得エラーレポート (${new Date().toLocaleString()}) ---\n`;
             
-            const usHoldings = uniqueHoldings.filter(h => h.type === 'US');
-            if (usHoldings.length > 0) {
-                if (!finnhubKey) usHoldings.forEach(h => {
-                    failedCodes.push(h.code);
-                    errorDetailsText += `[${h.code}] Finnhub APIキー未設定\n`;
-                });
-                else {
-                    await Promise.all(usHoldings.map(async (h) => {
-                        try {
-                            const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${h.code}&token=${finnhubKey}`);
-                            if(res.ok) {
-                                const data = await res.json();
-                                if(data.c && data.c > 0) marketPrices[h.code] = data.c * fxRate;
-                                else {
-                                    failedCodes.push(h.code);
-                                    errorDetailsText += `[${h.code}] Finnhub API: 価格データなし\n`;
-                                }
-                            } else {
-                                failedCodes.push(h.code);
-                                errorDetailsText += `[${h.code}] Finnhub API: 通信エラー(HTTP ${res.status})\n`;
-                            }
-                        } catch(e) { 
-                            failedCodes.push(h.code); 
-                            errorDetailsText += `[${h.code}] 米国株API: ネットワークエラー\n`;
+            // ★大改修ポイント：日本株と米国株はGASを経由せず、アプリから直接APIを叩く！
+            const stockHoldings = uniqueHoldings.filter(h => h.type === 'US' || h.type === 'JP');
+            if (stockHoldings.length > 0) {
+                await Promise.all(stockHoldings.map(async (h) => {
+                    try {
+                        let url = '';
+                        if (h.type === 'JP') {
+                            url = `https://query1.finance.yahoo.com/v8/finance/chart/${h.code}.T`;
+                        } else {
+                            if (finnhubKey) url = `https://finnhub.io/api/v1/quote?symbol=${h.code}&token=${finnhubKey}`;
+                            else url = `https://query1.finance.yahoo.com/v8/finance/chart/${h.code}`;
                         }
-                    }));
-                }
+                        
+                        const res = await fetch(url);
+                        if(res.ok) {
+                            const data = await res.json();
+                            if (url.includes('finnhub')) {
+                                if(data.c && data.c > 0) marketPrices[h.code] = data.c * fxRate;
+                                else { failedCodes.push(h.code); errorDetailsText += `[${h.code}] Finnhub: 価格データなし\n`; }
+                            } else {
+                                if (data.chart?.result?.length > 0) {
+                                    let price = data.chart.result[0].meta.regularMarketPrice;
+                                    if (h.type === 'US') price = price * fxRate; 
+                                    marketPrices[h.code] = price;
+                                } else { failedCodes.push(h.code); errorDetailsText += `[${h.code}] YahooAPI: 価格データなし\n`; }
+                            }
+                        } else { failedCodes.push(h.code); errorDetailsText += `[${h.code}] 個別株API: 通信拒否(HTTP ${res.status})\n`; }
+                    } catch(e) { failedCodes.push(h.code); errorDetailsText += `[${h.code}] 個別株API: ネットワークエラー\n`; }
+                }));
             }
 
-            const jpFundHoldings = uniqueHoldings.filter(h => h.type === 'JP' || h.type === 'FUND');
+            // ★投資信託のみGASに依頼する
+            const jpFundHoldings = uniqueHoldings.filter(h => h.type === 'FUND');
             if (jpFundHoldings.length > 0) {
-                if (!customUrl) jpFundHoldings.forEach(h => {
-                    failedCodes.push(h.code);
-                    errorDetailsText += `[${h.code}] GAS連携URL未設定\n`;
-                });
+                if (!customUrl) jpFundHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS連携URL未設定\n`; });
                 else {
                     try {
                         const codesStr = jpFundHoldings.map(h => h.code).join(',');
@@ -616,591 +338,200 @@
                         if(res.ok) {
                             const data = await res.json();
                             if(data.results) Object.keys(data.results).forEach(code => marketPrices[code] = data.results[code]);
-                            
                             if(data.errors && data.errors.length > 0) {
                                 data.errors.forEach(code => {
                                     failedCodes.push(code);
-                                    // 理由不明エラーを無くすための超強力ログ機能
                                     let detail = "理由不明エラー";
-                                    if (data.errorDetails && data.errorDetails[code]) {
-                                        detail = data.errorDetails[code];
-                                    } else {
-                                        // GASからエラー詳細が届いていない場合は、生のJSON文字列を出力して証拠を残す
-                                        detail = `詳細データなし (GAS応答: ${JSON.stringify(data).substring(0, 100)}...)`;
-                                    }
+                                    if (data.errorDetails && data.errorDetails[code]) detail = data.errorDetails[code];
+                                    else detail = `詳細データなし (GAS応答が古い、またはURLが違います)`;
                                     errorDetailsText += `[${code}] ${detail}\n`;
                                 });
                             }
-                        } else {
-                            jpFundHoldings.forEach(h => {
-                                failedCodes.push(h.code);
-                                errorDetailsText += `[${h.code}] GAS通信エラー(HTTP ${res.status})\n`;
-                            });
-                        }
-                    } catch(e) { 
-                        jpFundHoldings.forEach(h => {
-                            failedCodes.push(h.code);
-                            errorDetailsText += `[${h.code}] GAS連携 ネットワークエラー(${e.message})\n`;
-                        });
-                    }
+                        } else { jpFundHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS通信エラー(HTTP ${res.status})\n`; }); }
+                    } catch(e) { jpFundHoldings.forEach(h => { failedCodes.push(h.code); errorDetailsText += `[${h.code}] GAS連携 ネットワークエラー(${e.message})\n`; }); }
                 }
             }
 
             const newTotal = calcTotalAssets();
             lastTotalAsset = oldTotal; 
-            
             const today = new Date();
             const dateStr = today.getFullYear() + '/' + (today.getMonth()+1) + '/' + today.getDate();
             const existingIdx = historyData.findIndex(d => d.date === dateStr);
             if (existingIdx >= 0) historyData[existingIdx].value = newTotal; 
             else historyData.push({ date: dateStr, value: newTotal }); 
             
-            saveData();
-            updateAllViews();
-
-            icon.classList.remove('fa-spin');
-            btn.classList.remove('pointer-events-none', 'opacity-70');
+            saveData(); updateAllViews();
+            icon.classList.remove('fa-spin'); btn.classList.remove('pointer-events-none', 'opacity-70');
 
             if (failedCodes.length > 0) {
                 showToast(`一部取得失敗`, 'warning');
                 document.getElementById('error-details-text').value = errorDetailsText;
                 document.getElementById('error-modal').classList.remove('hidden');
-            } else {
-                showToast("最新価格の更新が完了しました！", 'success');
-            }
+            } else { showToast("最新価格の更新が完了しました！", 'success'); }
         }
 
+        // 以降のUI・グラフ・テーブル処理等はそのまま
         function switchTab(tabId) {
             const titles = { 'dashboard': 'ダッシュボード', 'holdings': '保有資産一覧', 'manage': 'データ管理', 'settings': '設定' };
             document.getElementById('page-title').innerText = titles[tabId];
-
             ['dashboard', 'holdings', 'manage', 'settings'].forEach(id => {
-                document.getElementById(`nav-${id}`).className = id === tabId 
-                    ? "w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-active transition-colors" 
-                    : "w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-inactive transition-colors";
-                
+                document.getElementById(`nav-${id}`).className = id === tabId ? "w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-active transition-colors" : "w-full flex items-center justify-center md:justify-start px-0 md:px-6 py-3 tab-inactive transition-colors";
                 const view = document.getElementById(`view-${id}`);
-                if (id === tabId) { view.classList.remove('hidden'); view.classList.add('block'); } 
-                else { view.classList.remove('block'); view.classList.add('hidden'); }
+                if (id === tabId) { view.classList.remove('hidden'); view.classList.add('block'); } else { view.classList.remove('block'); view.classList.add('hidden'); }
             });
         }
-
-        function updateAllViews() {
-            renderDashboard();
-            renderHoldingsTable();
-            renderManageTable();
-            renderHistoryManageTable();
-        }
-
-        function calcNetValue(currentValue, costValue, accountType) {
-            if (accountType === 'NISA') return currentValue;
-            const profit = currentValue - costValue;
-            if (profit > 0) return currentValue - (profit * 0.20315);
-            return currentValue;
-        }
-
+        function updateAllViews() { renderDashboard(); renderHoldingsTable(); renderManageTable(); renderHistoryManageTable(); }
+        function calcNetValue(currentValue, costValue, accountType) { if (accountType === 'NISA') return currentValue; const profit = currentValue - costValue; if (profit > 0) return currentValue - (profit * 0.20315); return currentValue; }
         function getAggregatedData(brokerFilter) {
-            let targetData = holdings;
-            if (brokerFilter !== 'ALL') targetData = holdings.filter(h => h.broker === brokerFilter);
-
-            if (brokerFilter !== 'ALL') {
-                return targetData.map(h => ({
-                    ...h, isAggregated: false,
-                    currentPrice: marketPrices[h.code] || h.avgPrice,
-                    currentValue: (marketPrices[h.code] || h.avgPrice) * h.quantity,
-                    costValue: h.avgPrice * h.quantity
-                }));
-            }
-
+            let targetData = holdings; if (brokerFilter !== 'ALL') targetData = holdings.filter(h => h.broker === brokerFilter);
+            if (brokerFilter !== 'ALL') return targetData.map(h => ({ ...h, isAggregated: false, currentPrice: marketPrices[h.code] || h.avgPrice, currentValue: (marketPrices[h.code] || h.avgPrice) * h.quantity, costValue: h.avgPrice * h.quantity }));
             const aggregated = {};
             targetData.forEach(h => {
                 const key = h.code + '_' + (h.accountType || '特定');
-                if (!aggregated[key]) {
-                    aggregated[key] = { 
-                        brokers: [h.broker], code: h.code, name: h.name, type: h.type,
-                        accountType: h.accountType || '特定', quantity: 0, totalCost: 0 
-                    };
-                } else if (!aggregated[key].brokers.includes(h.broker)) aggregated[key].brokers.push(h.broker);
-                aggregated[key].quantity += h.quantity;
-                aggregated[key].totalCost += (h.avgPrice * h.quantity);
+                if (!aggregated[key]) aggregated[key] = { brokers: [h.broker], code: h.code, name: h.name, type: h.type, accountType: h.accountType || '特定', quantity: 0, totalCost: 0 };
+                else if (!aggregated[key].brokers.includes(h.broker)) aggregated[key].brokers.push(h.broker);
+                aggregated[key].quantity += h.quantity; aggregated[key].totalCost += (h.avgPrice * h.quantity);
             });
-
             return Object.values(aggregated).map(a => {
-                const avgPrice = a.totalCost / a.quantity;
-                const currentPrice = marketPrices[a.code] || avgPrice;
-                const isAggregated = a.brokers.length > 1;
-                return {
-                    broker: isAggregated ? "複数 (合算)" : a.brokers[0], isAggregated: isAggregated,
-                    code: a.code, name: a.name, type: a.type, accountType: a.accountType,
-                    quantity: a.quantity, avgPrice: avgPrice, currentPrice: currentPrice,
-                    currentValue: currentPrice * a.quantity, costValue: a.totalCost
-                };
+                const avgPrice = a.totalCost / a.quantity; const currentPrice = marketPrices[a.code] || avgPrice; const isAggregated = a.brokers.length > 1;
+                return { broker: isAggregated ? "複数 (合算)" : a.brokers[0], isAggregated: isAggregated, code: a.code, name: a.name, type: a.type, accountType: a.accountType, quantity: a.quantity, avgPrice: avgPrice, currentPrice: currentPrice, currentValue: currentPrice * a.quantity, costValue: a.totalCost };
             });
         }
-
         function updateBrokerFilterOptions() {
             const brokers = [...new Set(holdings.map(h => h.broker))];
             ['dash-broker-filter', 'broker-filter', 'manage-broker-filter'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) {
-                    const currentVal = el.value;
-                    let html = id === 'manage-broker-filter' ? `<option value="ALL">全ての証券会社</option>` : `<option value="ALL">全体 (合算)</option>`;
-                    brokers.forEach(b => html += `<option value="${b}">${b}</option>`);
-                    el.innerHTML = html;
+                    const currentVal = el.value; let html = id === 'manage-broker-filter' ? `<option value="ALL">全ての証券会社</option>` : `<option value="ALL">全体 (合算)</option>`;
+                    brokers.forEach(b => html += `<option value="${b}">${b}</option>`); el.innerHTML = html;
                     if(brokers.includes(currentVal) || currentVal === 'ALL') el.value = currentVal;
                 }
             });
         }
-
         function renderDashboard() {
-            const dashFilter = document.getElementById('dash-broker-filter').value;
-            const allData = getAggregatedData(dashFilter);
-            
-            let totalVal = 0, totalCost = 0;
-            const brokerTotals = {}, brokerCosts = {};
-            const typeTotals = { 'JP': 0, 'US': 0, 'FUND': 0, 'OTHER': 0 };
-
+            const dashFilter = document.getElementById('dash-broker-filter').value; const allData = getAggregatedData(dashFilter);
+            let totalVal = 0, totalCost = 0; const brokerTotals = {}, brokerCosts = {}; const typeTotals = { 'JP': 0, 'US': 0, 'FUND': 0, 'OTHER': 0 };
             let targetHoldings = dashFilter === 'ALL' ? holdings : holdings.filter(h => h.broker === dashFilter);
-
             targetHoldings.forEach(h => {
-                const val = (marketPrices[h.code] || h.avgPrice) * h.quantity;
-                const cost = h.avgPrice * h.quantity;
+                const val = (marketPrices[h.code] || h.avgPrice) * h.quantity; const cost = h.avgPrice * h.quantity;
                 if(!brokerTotals[h.broker]) { brokerTotals[h.broker] = 0; brokerCosts[h.broker] = 0; }
                 brokerTotals[h.broker] += val; brokerCosts[h.broker] += cost;
-                const type = h.type || 'OTHER';
-                if(typeTotals[type] === undefined) typeTotals[type] = 0;
-                typeTotals[type] += val;
+                const type = h.type || 'OTHER'; if(typeTotals[type] === undefined) typeTotals[type] = 0; typeTotals[type] += val;
             });
-
             allData.forEach(d => { totalVal += d.currentValue; totalCost += d.costValue; });
-
             document.getElementById('dash-total-assets').innerText = fmtJpy.format(totalVal);
-            
-            const profit = totalVal - totalCost;
-            const profitPct = totalCost > 0 ? (profit / totalCost) * 100 : 0;
-            const pEl = document.getElementById('dash-total-profit');
-            if (profit >= 0) {
-                pEl.className = "text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-200 flex items-center";
-                pEl.innerHTML = `<i class="fa-solid fa-arrow-up mr-1 text-xs md:text-sm"></i> +${fmtJpy.format(profit)} (+${profitPct.toFixed(2)}%)`;
-            } else {
-                pEl.className = "text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-bold border border-rose-200 flex items-center";
-                pEl.innerHTML = `<i class="fa-solid fa-arrow-down mr-1 text-xs md:text-sm"></i> ${fmtJpy.format(profit)} (${profitPct.toFixed(2)}%)`;
-            }
-
-            const prevDiff = totalVal - lastTotalAsset;
-            const prevDiffEl = document.getElementById('dash-diff-prev');
-            if (lastTotalAsset === 0 || lastTotalAsset === totalVal) {
-                prevDiffEl.innerHTML = `<span class="text-slate-500 font-bold">変動なし</span>`;
-            } else if (prevDiff > 0) {
-                prevDiffEl.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-arrow-up text-xs mr-1"></i>+${fmtJpy.format(prevDiff)}</span>`;
-            } else {
-                prevDiffEl.innerHTML = `<span class="text-rose-600 font-bold"><i class="fa-solid fa-arrow-down text-xs mr-1"></i>${fmtJpy.format(prevDiff)}</span>`;
-            }
-
+            const profit = totalVal - totalCost; const profitPct = totalCost > 0 ? (profit / totalCost) * 100 : 0; const pEl = document.getElementById('dash-total-profit');
+            if (profit >= 0) { pEl.className = "text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-200 flex items-center"; pEl.innerHTML = `<i class="fa-solid fa-arrow-up mr-1 text-xs md:text-sm"></i> +${fmtJpy.format(profit)} (+${profitPct.toFixed(2)}%)`; }
+            else { pEl.className = "text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-bold border border-rose-200 flex items-center"; pEl.innerHTML = `<i class="fa-solid fa-arrow-down mr-1 text-xs md:text-sm"></i> ${fmtJpy.format(profit)} (${profitPct.toFixed(2)}%)`; }
+            const prevDiff = totalVal - lastTotalAsset; const prevDiffEl = document.getElementById('dash-diff-prev');
+            if (lastTotalAsset === 0 || lastTotalAsset === totalVal) prevDiffEl.innerHTML = `<span class="text-slate-500 font-bold">変動なし</span>`;
+            else if (prevDiff > 0) prevDiffEl.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-arrow-up text-xs mr-1"></i>+${fmtJpy.format(prevDiff)}</span>`;
+            else prevDiffEl.innerHTML = `<span class="text-rose-600 font-bold"><i class="fa-solid fa-arrow-down text-xs mr-1"></i>${fmtJpy.format(prevDiff)}</span>`;
             renderDashBrokerList(brokerTotals, brokerCosts);
-
             const historyPeriod = document.getElementById('dash-history-period').value || '7d';
-            const filteredHistory = filterHistoryData(historyData, historyPeriod);
-            drawCharts(brokerTotals, typeTotals, filteredHistory);
+            const filteredHistory = filterHistoryData(historyData, historyPeriod); drawCharts(brokerTotals, typeTotals, filteredHistory);
         }
-
         function filterHistoryData(data, period) {
-            if (!data || data.length === 0) {
-                const today = new Date();
-                const d = today.getFullYear() + '/' + (today.getMonth()+1) + '/' + today.getDate();
-                return [{ date: d, value: calcTotalAssets() }];
-            }
-            let days = 7;
-            if(period === '1m') days = 30;
-            if(period === '1y') days = 365;
-            if(period === 'all') days = 9999;
-            
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - days);
-            
-            let filtered = data.filter(d => {
-                const [y, m, day] = d.date.split('/');
-                return new Date(y, m-1, day) >= cutoff;
-            });
-            
-            if (filtered.length === 1) {
-                const [y, m, day] = filtered[0].date.split('/');
-                const prev = new Date(y, m-1, day);
-                prev.setDate(prev.getDate() - 1);
-                filtered = [{ date: prev.getFullYear() + '/' + (prev.getMonth()+1) + '/' + prev.getDate(), value: filtered[0].value }, filtered[0]];
-            }
+            if (!data || data.length === 0) { const today = new Date(); const d = today.getFullYear() + '/' + (today.getMonth()+1) + '/' + today.getDate(); return [{ date: d, value: calcTotalAssets() }]; }
+            let days = 7; if(period === '1m') days = 30; if(period === '1y') days = 365; if(period === 'all') days = 9999;
+            const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+            let filtered = data.filter(d => { const [y, m, day] = d.date.split('/'); return new Date(y, m-1, day) >= cutoff; });
+            if (filtered.length === 1) { const [y, m, day] = filtered[0].date.split('/'); const prev = new Date(y, m-1, day); prev.setDate(prev.getDate() - 1); filtered = [{ date: prev.getFullYear() + '/' + (prev.getMonth()+1) + '/' + prev.getDate(), value: filtered[0].value }, filtered[0]]; }
             return filtered;
         }
-
         function renderDashBrokerList(totals, costs) {
-            const listEl = document.getElementById('dash-broker-list');
-            listEl.innerHTML = '';
-            const sortedBrokers = Object.keys(totals).sort((a, b) => totals[b] - totals[a]);
+            const listEl = document.getElementById('dash-broker-list'); listEl.innerHTML = ''; const sortedBrokers = Object.keys(totals).sort((a, b) => totals[b] - totals[a]);
             sortedBrokers.forEach(broker => {
-                const val = totals[broker], cost = costs[broker];
-                const pl = val - cost, plPct = cost > 0 ? (pl/cost)*100 : 0;
-                let plHtml = pl >= 0 
-                    ? `<span class="text-emerald-600 text-[10px] md:text-xs font-bold">+${fmtJpy.format(pl)} (+${plPct.toFixed(2)}%)</span>`
-                    : `<span class="text-rose-600 text-[10px] md:text-xs font-bold">${fmtJpy.format(pl)} (${plPct.toFixed(2)}%)</span>`;
-
-                listEl.innerHTML += `
-                    <div class="flex justify-between items-center py-2 md:py-3 border-b border-slate-100 last:border-0">
-                        <div class="font-medium text-slate-700 text-xs md:text-sm">${broker}</div>
-                        <div class="text-right leading-tight"><div class="font-bold text-slate-800 text-sm md:text-base">${fmtJpy.format(val)}</div>${plHtml}</div>
-                    </div>`;
+                const val = totals[broker], cost = costs[broker]; const pl = val - cost, plPct = cost > 0 ? (pl/cost)*100 : 0;
+                let plHtml = pl >= 0 ? `<span class="text-emerald-600 text-[10px] md:text-xs font-bold">+${fmtJpy.format(pl)} (+${plPct.toFixed(2)}%)</span>` : `<span class="text-rose-600 text-[10px] md:text-xs font-bold">${fmtJpy.format(pl)} (${plPct.toFixed(2)}%)</span>`;
+                listEl.innerHTML += `<div class="flex justify-between items-center py-2 md:py-3 border-b border-slate-100 last:border-0"><div class="font-medium text-slate-700 text-xs md:text-sm">${broker}</div><div class="text-right leading-tight"><div class="font-bold text-slate-800 text-sm md:text-base">${fmtJpy.format(val)}</div>${plHtml}</div></div>`;
             });
             if(sortedBrokers.length === 0) listEl.innerHTML = '<p class="text-slate-500 text-xs md:text-sm mt-4 text-center">データがありません</p>';
         }
-
         function drawCharts(brokerData, typeData, historyData) {
             const bgColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
-            if(charts.broker) charts.broker.destroy();
-            charts.broker = new Chart(document.getElementById('brokerChart').getContext('2d'), {
-                type: 'doughnut', data: { labels: Object.keys(brokerData), datasets: [{ data: Object.values(brokerData), backgroundColor: bgColors, borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 10, font: {size: 10}} } } }
-            });
-
-            if(charts.type) charts.type.destroy();
-            charts.type = new Chart(document.getElementById('typeChart').getContext('2d'), {
-                type: 'doughnut', data: { labels: ['国内株', '米国株', '投資信託', 'その他'], datasets: [{ data: [typeData['JP']||0, typeData['US']||0, typeData['FUND']||0, typeData['OTHER']||0], backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#94a3b8'], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 10, font: {size: 10}} } } }
-            });
-
-            if(charts.history) charts.history.destroy();
-            charts.history = new Chart(document.getElementById('historyChart').getContext('2d'), {
-                type: 'line', data: { labels: historyData.map(d => d.date), datasets: [{ label: '総資産推移', data: historyData.map(d => d.value), borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.1, borderWidth: 2, pointRadius: 3, pointHoverRadius: 5 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => fmtJpy.format(ctx.raw) } } }, scales: { y: { ticks: { callback: v => (v/10000).toFixed(0) + '万', font: {size: 10} }, grid: { display: false } }, x: { ticks: { font: {size: 10} }, grid: { display: false } } } }
-            });
+            if(charts.broker) charts.broker.destroy(); charts.broker = new Chart(document.getElementById('brokerChart').getContext('2d'), { type: 'doughnut', data: { labels: Object.keys(brokerData), datasets: [{ data: Object.values(brokerData), backgroundColor: bgColors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 10, font: {size: 10}} } } } });
+            if(charts.type) charts.type.destroy(); charts.type = new Chart(document.getElementById('typeChart').getContext('2d'), { type: 'doughnut', data: { labels: ['国内株', '米国株', '投資信託', 'その他'], datasets: [{ data: [typeData['JP']||0, typeData['US']||0, typeData['FUND']||0, typeData['OTHER']||0], backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#94a3b8'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels:{boxWidth: 10, font: {size: 10}} } } } });
+            if(charts.history) charts.history.destroy(); charts.history = new Chart(document.getElementById('historyChart').getContext('2d'), { type: 'line', data: { labels: historyData.map(d => d.date), datasets: [{ label: '総資産推移', data: historyData.map(d => d.value), borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.1, borderWidth: 2, pointRadius: 3, pointHoverRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => fmtJpy.format(ctx.raw) } } }, scales: { y: { ticks: { callback: v => (v/10000).toFixed(0) + '万', font: {size: 10} }, grid: { display: false } }, x: { ticks: { font: {size: 10} }, grid: { display: false } } } } });
         }
-
         function renderHoldingsTable() {
-            const filter = document.getElementById('broker-filter').value;
-            const data = getAggregatedData(filter);
-            const tbody = document.getElementById('holdings-tbody');
-            const tfoot = document.getElementById('holdings-tfoot');
-            tbody.innerHTML = '';
-            
+            const filter = document.getElementById('broker-filter').value; const data = getAggregatedData(filter);
+            const tbody = document.getElementById('holdings-tbody'); const tfoot = document.getElementById('holdings-tfoot'); tbody.innerHTML = '';
             let sumVal = 0, sumCost = 0, sumNet = 0;
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-slate-500">データがありません。</td></tr>`;
-                tfoot.innerHTML = ''; return;
-            }
-
+            if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-slate-500">データがありません。</td></tr>`; tfoot.innerHTML = ''; return; }
             data.forEach(row => {
-                const netVal = calcNetValue(row.currentValue, row.costValue, row.accountType);
-                sumVal += row.currentValue; sumCost += row.costValue; sumNet += netVal;
-                const pl = row.currentValue - row.costValue;
-                const plPct = (pl / row.costValue) * 100;
+                const netVal = calcNetValue(row.currentValue, row.costValue, row.accountType); sumVal += row.currentValue; sumCost += row.costValue; sumNet += netVal;
+                const pl = row.currentValue - row.costValue; const plPct = (pl / row.costValue) * 100;
                 let plClass = pl > 0 ? "text-emerald-600 font-medium" : (pl < 0 ? "text-rose-600 font-medium" : "text-slate-600");
-
-                const brokerBadge = row.isAggregated 
-                    ? `<button onclick="showBreakdown('${row.code}', '${row.accountType}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-1.5 py-0.5 rounded text-[10px] md:text-xs transition-colors cursor-pointer border border-blue-200 font-bold shadow-sm whitespace-nowrap">合算 <i class="fa-solid fa-magnifying-glass text-[8px] ml-0.5"></i></button>`
-                    : `<span class="bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] md:text-xs whitespace-nowrap">${row.broker}</span>`;
-                
+                const brokerBadge = row.isAggregated ? `<button onclick="showBreakdown('${row.code}', '${row.accountType}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-1.5 py-0.5 rounded text-[10px] md:text-xs transition-colors cursor-pointer border border-blue-200 font-bold shadow-sm whitespace-nowrap">合算 <i class="fa-solid fa-magnifying-glass text-[8px] ml-0.5"></i></button>` : `<span class="bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] md:text-xs whitespace-nowrap">${row.broker}</span>`;
                 const accountBadgeClass = row.accountType === 'NISA' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200';
                 let typeText = row.type === 'US' ? "米国" : (row.type === 'FUND' ? "投信" : "株");
-                
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-4 py-2 md:px-6 md:py-3">${brokerBadge}</td>
-                        <td class="px-4 py-2 md:px-6 md:py-3"><div class="flex items-center space-x-1 flex-wrap"><span class="${accountBadgeClass} border px-1.5 py-0.5 rounded text-[10px] md:text-xs mb-1">${row.accountType || '特定'}</span><span class="bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0.5 rounded text-[9px] md:text-[10px] mb-1">${typeText}</span></div></td>
-                        <td class="px-4 py-2 md:px-6 md:py-3"><div class="font-bold text-slate-800 text-[11px] md:text-sm">${row.code}</div><div class="text-[10px] md:text-xs text-slate-500 truncate max-w-[100px] md:max-w-[150px]">${row.name}</div></td>
-                        <td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtJpy.format(row.currentPrice)}</td>
-                        <td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtNum.format(row.quantity)}</td>
-                        <td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtJpy.format(row.avgPrice)}</td>
-                        <td class="px-4 py-2 md:px-6 md:py-3 text-right"><div class="font-bold text-slate-800">${fmtJpy.format(row.currentValue)}</div><div class="text-[9px] md:text-[11px] text-slate-500 mt-0.5">手残り: ${fmtJpy.format(netVal)}</div></td>
-                        <td class="px-4 py-2 md:px-6 md:py-3 text-right ${plClass}"><div>${pl > 0 ? '+' : ''}${fmtJpy.format(pl)}</div><div class="text-[10px] md:text-xs">${pl > 0 ? '+' : ''}${plPct.toFixed(2)}%</div></td>
-                    </tr>
-                `;
+                tbody.innerHTML += `<tr class="hover:bg-slate-50 transition-colors"><td class="px-4 py-2 md:px-6 md:py-3">${brokerBadge}</td><td class="px-4 py-2 md:px-6 md:py-3"><div class="flex items-center space-x-1 flex-wrap"><span class="${accountBadgeClass} border px-1.5 py-0.5 rounded text-[10px] md:text-xs mb-1">${row.accountType || '特定'}</span><span class="bg-slate-100 text-slate-500 border border-slate-200 px-1 py-0.5 rounded text-[9px] md:text-[10px] mb-1">${typeText}</span></div></td><td class="px-4 py-2 md:px-6 md:py-3"><div class="font-bold text-slate-800 text-[11px] md:text-sm">${row.code}</div><div class="text-[10px] md:text-xs text-slate-500 truncate max-w-[100px] md:max-w-[150px]">${row.name}</div></td><td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtJpy.format(row.currentPrice)}</td><td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtNum.format(row.quantity)}</td><td class="px-4 py-2 md:px-6 md:py-3 text-right">${fmtJpy.format(row.avgPrice)}</td><td class="px-4 py-2 md:px-6 md:py-3 text-right"><div class="font-bold text-slate-800">${fmtJpy.format(row.currentValue)}</div><div class="text-[9px] md:text-[11px] text-slate-500 mt-0.5">手残り: ${fmtJpy.format(netVal)}</div></td><td class="px-4 py-2 md:px-6 md:py-3 text-right ${plClass}"><div>${pl > 0 ? '+' : ''}${fmtJpy.format(pl)}</div><div class="text-[10px] md:text-xs">${pl > 0 ? '+' : ''}${plPct.toFixed(2)}%</div></td></tr>`;
             });
-
-            const totalPl = sumVal - sumCost;
-            const totalPlPct = sumCost > 0 ? (totalPl / sumCost) * 100 : 0;
-            let totalPlClass = totalPl > 0 ? "text-emerald-600" : (totalPl < 0 ? "text-rose-600" : "text-slate-600");
-
-            tfoot.innerHTML = `
-                <tr>
-                    <td colspan="6" class="px-4 py-3 md:px-6 md:py-4 text-right">合計:</td>
-                    <td class="px-4 py-3 md:px-6 md:py-4 text-right"><div class="text-sm md:text-lg text-slate-800 font-bold">${fmtJpy.format(sumVal)}</div><div class="text-[10px] md:text-xs text-slate-500 mt-1">手残り: ${fmtJpy.format(sumNet)}</div></td>
-                    <td class="px-4 py-3 md:px-6 md:py-4 text-right ${totalPlClass}"><div class="font-bold text-sm md:text-base">${totalPl > 0 ? '+' : ''}${fmtJpy.format(totalPl)}</div><div class="text-[10px] md:text-xs">${totalPl > 0 ? '+' : ''}${totalPlPct.toFixed(2)}%</div></td>
-                </tr>
-            `;
+            const totalPl = sumVal - sumCost; const totalPlPct = sumCost > 0 ? (totalPl / sumCost) * 100 : 0; let totalPlClass = totalPl > 0 ? "text-emerald-600" : (totalPl < 0 ? "text-rose-600" : "text-slate-600");
+            tfoot.innerHTML = `<tr><td colspan="6" class="px-4 py-3 md:px-6 md:py-4 text-right">合計:</td><td class="px-4 py-3 md:px-6 md:py-4 text-right"><div class="text-sm md:text-lg text-slate-800 font-bold">${fmtJpy.format(sumVal)}</div><div class="text-[10px] md:text-xs text-slate-500 mt-1">手残り: ${fmtJpy.format(sumNet)}</div></td><td class="px-4 py-3 md:px-6 md:py-4 text-right ${totalPlClass}"><div class="font-bold text-sm md:text-base">${totalPl > 0 ? '+' : ''}${fmtJpy.format(totalPl)}</div><div class="text-[10px] md:text-xs">${totalPl > 0 ? '+' : ''}${totalPlPct.toFixed(2)}%</div></td></tr>`;
         }
-
         function renderManageTable() {
-            const filterBroker = document.getElementById('manage-broker-filter').value;
-            const searchWord = document.getElementById('manage-search-input').value.toLowerCase();
-            const tbody = document.getElementById('manage-tbody');
-            tbody.innerHTML = '';
-            
-            let target = holdings;
-            if (filterBroker !== 'ALL') target = target.filter(h => h.broker === filterBroker);
-            
-            if (searchWord) {
-                target = target.filter(h => 
-                    h.name.toLowerCase().includes(searchWord) || h.code.toLowerCase().includes(searchWord)
-                );
-            }
-
-            if (target.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">一致するデータがありません。</td></tr>`;
-                return;
-            }
-
+            const filterBroker = document.getElementById('manage-broker-filter').value; const searchWord = document.getElementById('manage-search-input').value.toLowerCase();
+            const tbody = document.getElementById('manage-tbody'); tbody.innerHTML = '';
+            let target = holdings; if (filterBroker !== 'ALL') target = target.filter(h => h.broker === filterBroker);
+            if (searchWord) target = target.filter(h => h.name.toLowerCase().includes(searchWord) || h.code.toLowerCase().includes(searchWord));
+            if (target.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">一致するデータがありません。</td></tr>`; return; }
             target.forEach(h => {
-                const acc = h.accountType || '特定';
-                const typeText = h.type === 'FUND' ? '投信' : (h.type === 'US' ? '米国' : '国内');
-                const bgClass = h.id === editTargetId ? 'bg-blue-50' : 'hover:bg-slate-50';
-                
-                tbody.innerHTML += `
-                    <tr class="${bgClass} border-b border-slate-100 transition-colors">
-                        <td class="px-3 md:px-4 py-2"><span class="bg-slate-100 border border-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px] md:text-xs whitespace-nowrap">${h.broker}</span></td>
-                        <td class="px-3 md:px-4 py-2"><span class="bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded text-[10px] md:text-xs border border-slate-200 mr-1 whitespace-nowrap">${acc}</span><span class="bg-slate-50 text-slate-400 px-1 py-0.5 rounded text-[9px] md:text-[10px] border border-slate-200 whitespace-nowrap">${typeText}</span></td>
-                        <td class="px-3 md:px-4 py-2"><div class="font-bold text-[11px] md:text-sm text-slate-800">${h.code}</div><div class="text-[10px] md:text-xs text-slate-500 truncate max-w-[80px] md:max-w-[120px]">${h.name}</div></td>
-                        <td class="px-3 md:px-4 py-2 text-right text-[11px] md:text-sm">${fmtNum.format(h.quantity)}</td>
-                        <td class="px-3 md:px-4 py-2 text-right text-[11px] md:text-sm">${fmtJpy.format(h.avgPrice)}</td>
-                        <td class="px-3 md:px-4 py-2 text-center space-x-1 md:space-x-2 whitespace-nowrap">
-                            <button onclick="editHolding('${h.id}')" class="text-blue-500 hover:text-blue-700 hover:bg-blue-100 p-1 md:p-1.5 rounded transition-colors"><i class="fa-solid fa-pen text-sm"></i></button>
-                            <button onclick="confirmDelete('${h.id}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 md:p-1.5 rounded transition-colors"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                        </td>
-                    </tr>
-                `;
+                const acc = h.accountType || '特定'; const typeText = h.type === 'FUND' ? '投信' : (h.type === 'US' ? '米国' : '国内'); const bgClass = h.id === editTargetId ? 'bg-blue-50' : 'hover:bg-slate-50';
+                tbody.innerHTML += `<tr class="${bgClass} border-b border-slate-100 transition-colors"><td class="px-3 md:px-4 py-2"><span class="bg-slate-100 border border-slate-200 text-slate-700 px-1.5 py-0.5 rounded text-[10px] md:text-xs whitespace-nowrap">${h.broker}</span></td><td class="px-3 md:px-4 py-2"><span class="bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded text-[10px] md:text-xs border border-slate-200 mr-1 whitespace-nowrap">${acc}</span><span class="bg-slate-50 text-slate-400 px-1 py-0.5 rounded text-[9px] md:text-[10px] border border-slate-200 whitespace-nowrap">${typeText}</span></td><td class="px-3 md:px-4 py-2"><div class="font-bold text-[11px] md:text-sm text-slate-800">${h.code}</div><div class="text-[10px] md:text-xs text-slate-500 truncate max-w-[80px] md:max-w-[120px]">${h.name}</div></td><td class="px-3 md:px-4 py-2 text-right text-[11px] md:text-sm">${fmtNum.format(h.quantity)}</td><td class="px-3 md:px-4 py-2 text-right text-[11px] md:text-sm">${fmtJpy.format(h.avgPrice)}</td><td class="px-3 md:px-4 py-2 text-center space-x-1 md:space-x-2 whitespace-nowrap"><button onclick="editHolding('${h.id}')" class="text-blue-500 hover:text-blue-700 hover:bg-blue-100 p-1 md:p-1.5 rounded transition-colors"><i class="fa-solid fa-pen text-sm"></i></button><button onclick="confirmDelete('${h.id}')" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 md:p-1.5 rounded transition-colors"><i class="fa-solid fa-trash-can text-sm"></i></button></td></tr>`;
             });
         }
-
         function renderHistoryManageTable() {
-            const tbody = document.getElementById('manage-history-tbody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            if (historyData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-4 text-center text-slate-500">履歴データがありません。</td></tr>`;
-                return;
-            }
-
+            const tbody = document.getElementById('manage-history-tbody'); if (!tbody) return; tbody.innerHTML = '';
+            if (historyData.length === 0) { tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-4 text-center text-slate-500">履歴データがありません。</td></tr>`; return; }
             const sortedHistory = [...historyData].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            sortedHistory.forEach(h => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
-                        <td class="px-3 md:px-4 py-2 font-medium text-slate-700">${h.date}</td>
-                        <td class="px-3 md:px-4 py-2 text-right font-bold text-slate-800">${fmtJpy.format(h.value)}</td>
-                        <td class="px-3 md:px-4 py-2 text-center whitespace-nowrap">
-                            <button onclick="confirmDeleteHistory('${h.date}', ${h.value})" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 md:p-1.5 rounded transition-colors" title="削除">
-                                <i class="fa-solid fa-trash-can text-sm"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
+            sortedHistory.forEach(h => { tbody.innerHTML += `<tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors"><td class="px-3 md:px-4 py-2 font-medium text-slate-700">${h.date}</td><td class="px-3 md:px-4 py-2 text-right font-bold text-slate-800">${fmtJpy.format(h.value)}</td><td class="px-3 md:px-4 py-2 text-center whitespace-nowrap"><button onclick="confirmDeleteHistory('${h.date}', ${h.value})" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 md:p-1.5 rounded transition-colors" title="削除"><i class="fa-solid fa-trash-can text-sm"></i></button></td></tr>`; });
         }
-
         function handleAddSubmit(e) {
             e.preventDefault();
-            const broker = document.getElementById('add-broker').value;
-            const accountType = document.getElementById('add-account').value;
-            const type = document.getElementById('add-type').value;
-            const code = document.getElementById('add-code').value.toUpperCase();
-            const name = document.getElementById('add-name').value;
-            const quantity = parseFloat(document.getElementById('add-qty').value);
-            const avgPrice = parseFloat(document.getElementById('add-price').value);
-            
-            if (editTargetId) {
-                const index = holdings.findIndex(h => h.id === editTargetId);
-                if (index !== -1) holdings[index] = { ...holdings[index], broker, accountType, type, code, name, quantity, avgPrice };
-                showToast("データを更新しました", 'success');
-                cancelEdit();
-            } else {
-                const newId = "id_" + Date.now();
-                holdings.push({ id: newId, broker, accountType, type, code, name, quantity, avgPrice });
-                if(!marketPrices[code]) marketPrices[code] = avgPrice;
-                document.getElementById('add-form').reset();
-                showToast("データを追加しました", 'success');
-            }
+            const broker = document.getElementById('add-broker').value, accountType = document.getElementById('add-account').value, type = document.getElementById('add-type').value, code = document.getElementById('add-code').value.toUpperCase(), name = document.getElementById('add-name').value, quantity = parseFloat(document.getElementById('add-qty').value), avgPrice = parseFloat(document.getElementById('add-price').value);
+            if (editTargetId) { const index = holdings.findIndex(h => h.id === editTargetId); if (index !== -1) holdings[index] = { ...holdings[index], broker, accountType, type, code, name, quantity, avgPrice }; showToast("データを更新しました", 'success'); cancelEdit(); } else { const newId = "id_" + Date.now(); holdings.push({ id: newId, broker, accountType, type, code, name, quantity, avgPrice }); if(!marketPrices[code]) marketPrices[code] = avgPrice; document.getElementById('add-form').reset(); showToast("データを追加しました", 'success'); }
             saveData();
         }
-
         function editHolding(id) {
-            const target = holdings.find(h => h.id === id);
-            if(!target) return;
-            editTargetId = id;
-            document.getElementById('add-broker').value = target.broker;
-            document.getElementById('add-account').value = target.accountType || '特定';
-            document.getElementById('add-type').value = target.type || 'JP';
-            document.getElementById('add-code').value = target.code;
-            document.getElementById('add-name').value = target.name;
-            document.getElementById('add-qty').value = target.quantity;
-            document.getElementById('add-price').value = target.avgPrice;
-
-            const btn = document.getElementById('add-submit-btn');
-            btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> 更新';
-            btn.classList.replace('bg-primary', 'bg-emerald-600');
-            btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
-            document.getElementById('edit-cancel-btn').classList.remove('hidden');
-            document.getElementById('manage-form-title').innerHTML = `<span class="text-emerald-600"><i class="fa-solid fa-pen mr-2"></i>データの編集</span>`;
-            document.getElementById('manage-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            renderManageTable();
+            const target = holdings.find(h => h.id === id); if(!target) return; editTargetId = id;
+            document.getElementById('add-broker').value = target.broker; document.getElementById('add-account').value = target.accountType || '特定'; document.getElementById('add-type').value = target.type || 'JP'; document.getElementById('add-code').value = target.code; document.getElementById('add-name').value = target.name; document.getElementById('add-qty').value = target.quantity; document.getElementById('add-price').value = target.avgPrice;
+            const btn = document.getElementById('add-submit-btn'); btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> 更新'; btn.classList.replace('bg-primary', 'bg-emerald-600'); btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700'); document.getElementById('edit-cancel-btn').classList.remove('hidden'); document.getElementById('manage-form-title').innerHTML = `<span class="text-emerald-600"><i class="fa-solid fa-pen mr-2"></i>データの編集</span>`; document.getElementById('manage-form-container').scrollIntoView({ behavior: 'smooth', block: 'start' }); renderManageTable();
         }
-
         function cancelEdit() {
-            editTargetId = null;
-            document.getElementById('add-form').reset();
-            const btn = document.getElementById('add-submit-btn');
-            btn.innerHTML = '<i class="fa-solid fa-plus mr-1"></i> 追加';
-            btn.classList.replace('bg-emerald-600', 'bg-primary');
-            btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
-            document.getElementById('edit-cancel-btn').classList.add('hidden');
-            document.getElementById('manage-form-title').innerText = "新規データの追加";
-            renderManageTable();
+            editTargetId = null; document.getElementById('add-form').reset(); const btn = document.getElementById('add-submit-btn'); btn.innerHTML = '<i class="fa-solid fa-plus mr-1"></i> 追加'; btn.classList.replace('bg-emerald-600', 'bg-primary'); btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700'); document.getElementById('edit-cancel-btn').classList.add('hidden'); document.getElementById('manage-form-title').innerText = "新規データの追加"; renderManageTable();
         }
-
         function confirmDelete(id) {
-            deleteTargetType = 'holding';
-            deleteTargetId = id;
-            const target = holdings.find(h => h.id === id);
-            if(!target) return;
-            document.getElementById('delete-modal-text').innerHTML = `
-                以下のデータを削除します。<br>
-                <div class="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs md:text-sm font-medium">
-                    ${target.broker} [${target.accountType || '特定'}] : ${target.code} ${target.name} <br>数量: ${target.quantity}
-                </div>`;
-            document.getElementById('delete-modal').classList.remove('hidden');
+            deleteTargetType = 'holding'; deleteTargetId = id; const target = holdings.find(h => h.id === id); if(!target) return;
+            document.getElementById('delete-modal-text').innerHTML = `以下のデータを削除します。<br><div class="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs md:text-sm font-medium">${target.broker} [${target.accountType || '特定'}] : ${target.code} ${target.name} <br>数量: ${target.quantity}</div>`; document.getElementById('delete-modal').classList.remove('hidden');
         }
-
         function confirmDeleteHistory(dateStr, value) {
-            deleteTargetType = 'history';
-            deleteTargetId = dateStr;
-            document.getElementById('delete-modal-text').innerHTML = `
-                以下の資産推移の履歴を削除します。<br>
-                <div class="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs md:text-sm font-medium">
-                    日付: <span class="font-bold">${dateStr}</span> <br>
-                    記録額: <span class="font-bold">${fmtJpy.format(value)}</span>
-                </div>`;
-            document.getElementById('delete-modal').classList.remove('hidden');
+            deleteTargetType = 'history'; deleteTargetId = dateStr;
+            document.getElementById('delete-modal-text').innerHTML = `以下の資産推移の履歴を削除します。<br><div class="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs md:text-sm font-medium">日付: <span class="font-bold">${dateStr}</span> <br>記録額: <span class="font-bold">${fmtJpy.format(value)}</span></div>`; document.getElementById('delete-modal').classList.remove('hidden');
         }
-        
         function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); deleteTargetId = null; }
-        
         function executeDelete() {
             if(deleteTargetId) {
-                if (deleteTargetType === 'holding') {
-                    if(deleteTargetId === editTargetId) cancelEdit();
-                    holdings = holdings.filter(h => h.id !== deleteTargetId);
-                    showToast("保有データを削除しました", 'success');
-                } else if (deleteTargetType === 'history') {
-                    historyData = historyData.filter(h => h.date !== deleteTargetId);
-                    if (historyData.length > 0) {
-                        const sorted = [...historyData].sort((a,b) => new Date(b.date) - new Date(a.date));
-                        lastTotalAsset = sorted[0].value;
-                    } else {
-                        lastTotalAsset = 0;
-                    }
-                    showToast("履歴を削除しました", 'success');
-                }
-                
-                saveData();
-                updateAllViews();
-                closeDeleteModal();
+                if (deleteTargetType === 'holding') { if(deleteTargetId === editTargetId) cancelEdit(); holdings = holdings.filter(h => h.id !== deleteTargetId); showToast("保有データを削除しました", 'success'); }
+                else if (deleteTargetType === 'history') { historyData = historyData.filter(h => h.date !== deleteTargetId); if (historyData.length > 0) { const sorted = [...historyData].sort((a,b) => new Date(b.date) - new Date(a.date)); lastTotalAsset = sorted[0].value; } else { lastTotalAsset = 0; } showToast("履歴を削除しました", 'success'); }
+                saveData(); updateAllViews(); closeDeleteModal();
             }
         }
-
         function showBreakdown(code, accountType) {
-            const targetHoldings = holdings.filter(h => h.code === code && (h.accountType || '特定') === accountType);
-            let html = '';
-            targetHoldings.forEach(h => {
-                html += `
-                    <div class="flex justify-between items-center py-2 md:py-3 border-b border-slate-100 last:border-0">
-                        <div><div class="font-bold text-slate-700 text-sm md:text-base"><i class="fa-solid fa-building-columns text-slate-400 mr-2 text-xs"></i>${h.broker}</div></div>
-                        <div class="text-right"><div class="text-xs md:text-sm">数量: <span class="font-bold text-sm md:text-base">${fmtNum.format(h.quantity)}</span></div><div class="text-[10px] md:text-xs text-slate-500">取得単価: ${fmtJpy.format(h.avgPrice)}</div></div>
-                    </div>`;
-            });
-            document.getElementById('breakdown-content').innerHTML = html;
-            document.getElementById('breakdown-title').innerText = `${code} の内訳 (${accountType})`;
-            document.getElementById('breakdown-modal').classList.remove('hidden');
+            const targetHoldings = holdings.filter(h => h.code === code && (h.accountType || '特定') === accountType); let html = '';
+            targetHoldings.forEach(h => { html += `<div class="flex justify-between items-center py-2 md:py-3 border-b border-slate-100 last:border-0"><div><div class="font-bold text-slate-700 text-sm md:text-base"><i class="fa-solid fa-building-columns text-slate-400 mr-2 text-xs"></i>${h.broker}</div></div><div class="text-right"><div class="text-xs md:text-sm">数量: <span class="font-bold text-sm md:text-base">${fmtNum.format(h.quantity)}</span></div><div class="text-[10px] md:text-xs text-slate-500">取得単価: ${fmtJpy.format(h.avgPrice)}</div></div></div>`; });
+            document.getElementById('breakdown-content').innerHTML = html; document.getElementById('breakdown-title').innerText = `${code} の内訳 (${accountType})`; document.getElementById('breakdown-modal').classList.remove('hidden');
         }
-
         function closeBreakdownModal() { document.getElementById('breakdown-modal').classList.add('hidden'); }
-
-        function updateBackupTextarea() {
-            const dataStr = JSON.stringify({
-                holdings: holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset
-            });
-            document.getElementById('backup-data').value = dataStr;
-        }
-
-        function downloadBackupFile() {
-            const dataStr = JSON.stringify({ holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset });
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            const date = new Date();
-            const ymd = date.getFullYear() + String(date.getMonth()+1).padStart(2, '0') + String(date.getDate()).padStart(2, '0');
-            a.download = `myportfolio_backup_${ymd}.json`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-            showToast("バックアップファイルをダウンロードしました", 'success');
-        }
-
-        function uploadBackupFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    processImportData(parsed);
-                    document.getElementById('file-upload').value = ''; 
-                } catch(err) {
-                    showToast("ファイルの読み込みに失敗しました（形式エラー）", 'error');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function copyBackupText() {
-            const textarea = document.getElementById('backup-data');
-            textarea.select();
-            document.execCommand('copy');
-            showToast("テキストをコピーしました", 'success');
-        }
-
-        function importBackupText() {
-            const str = document.getElementById('import-data').value;
-            if(!str) return;
-            try {
-                const parsed = JSON.parse(str);
-                processImportData(parsed);
-                document.getElementById('import-data').value = "";
-            } catch(e) { showToast("正しいデータ形式ではありません", 'error'); }
-        }
-
-        function processImportData(parsed) {
-            if(Array.isArray(parsed)) {
-                holdings = parsed; 
-            } else if (parsed.holdings) {
-                holdings = parsed.holdings;
-                historyData = parsed.history || [];
-                marketPrices = parsed.prices || {};
-                lastTotalAsset = parsed.lastTotal || 0;
-            }
-            saveData(); initPrices(); updateAllViews();
-            showToast("データの復元に成功しました！", 'success');
-        }
-
-        function saveSettings() {
-            localStorage.setItem('api_key_finnhub', document.getElementById('api-key-finnhub').value);
-            localStorage.setItem('api_url_custom', document.getElementById('api-url-custom').value);
-            localStorage.setItem('setting_fx_rate', document.getElementById('setting-fx-rate').value);
-            const msg = document.getElementById('save-msg');
-            msg.style.opacity = 1; setTimeout(() => { msg.style.opacity = 0; }, 3000);
-        }
-
-        function loadSettings() {
-            document.getElementById('api-key-finnhub').value = localStorage.getItem('api_key_finnhub') || '';
-            document.getElementById('api-url-custom').value = localStorage.getItem('api_url_custom') || '';
-            document.getElementById('setting-fx-rate').value = localStorage.getItem('setting_fx_rate') || '150.00';
-        }
-
+        function updateBackupTextarea() { document.getElementById('backup-data').value = JSON.stringify({ holdings: holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset }); }
+        function downloadBackupFile() { const dataStr = JSON.stringify({ holdings, history: historyData, prices: marketPrices, lastTotal: lastTotalAsset }); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; const date = new Date(); const ymd = date.getFullYear() + String(date.getMonth()+1).padStart(2, '0') + String(date.getDate()).padStart(2, '0'); a.download = `myportfolio_backup_${ymd}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast("バックアップファイルをダウンロードしました", 'success'); }
+        function uploadBackupFile(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); processImportData(parsed); document.getElementById('file-upload').value = ''; } catch(err) { showToast("ファイルの読み込みに失敗しました", 'error'); } }; reader.readAsText(file); }
+        function copyBackupText() { document.getElementById('backup-data').select(); document.execCommand('copy'); showToast("テキストをコピーしました", 'success'); }
+        function importBackupText() { const str = document.getElementById('import-data').value; if(!str) return; try { const parsed = JSON.parse(str); processImportData(parsed); document.getElementById('import-data').value = ""; } catch(e) { showToast("正しいデータ形式ではありません", 'error'); } }
+        function processImportData(parsed) { if(Array.isArray(parsed)) holdings = parsed; else if (parsed.holdings) { holdings = parsed.holdings; historyData = parsed.history || []; marketPrices = parsed.prices || {}; lastTotalAsset = parsed.lastTotal || 0; } saveData(); initPrices(); updateAllViews(); showToast("データの復元に成功しました！", 'success'); }
+        function saveSettings() { localStorage.setItem('api_key_finnhub', document.getElementById('api-key-finnhub').value); localStorage.setItem('api_url_custom', document.getElementById('api-url-custom').value); localStorage.setItem('setting_fx_rate', document.getElementById('setting-fx-rate').value); const msg = document.getElementById('save-msg'); msg.style.opacity = 1; setTimeout(() => { msg.style.opacity = 0; }, 3000); }
+        function loadSettings() { document.getElementById('api-key-finnhub').value = localStorage.getItem('api_key_finnhub') || ''; document.getElementById('api-url-custom').value = localStorage.getItem('api_url_custom') || ''; document.getElementById('setting-fx-rate').value = localStorage.getItem('setting_fx_rate') || '150.00'; }
     </script>
 </body>
 </html>
