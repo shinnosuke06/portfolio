@@ -277,6 +277,27 @@
                     </div>
                 </div>
 
+                <!-- 追加: 資産推移の履歴管理エリア -->
+                <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-base md:text-lg font-bold text-slate-800">資産推移の履歴管理</h2>
+                    </div>
+                    <p class="text-xs md:text-sm text-slate-600 mb-4">グラフに表示される過去の総資産額の記録を削除できます。誤って更新してしまった場合などにご利用ください。</p>
+                    <div class="overflow-x-auto max-h-60 overflow-y-auto">
+                        <table class="w-full text-left border-collapse min-w-[300px] text-xs md:text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 sticky top-0 shadow-sm">
+                                    <th class="px-3 md:px-4 py-2">日付</th>
+                                    <th class="px-3 md:px-4 py-2 text-right">総資産額</th>
+                                    <th class="px-3 md:px-4 py-2 text-center w-20">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manage-history-tbody" class="divide-y divide-slate-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- 追加・改善: ファイル形式対応バックアップエリア -->
                 <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-center mb-4 border-b pb-2">
@@ -404,6 +425,7 @@
         let charts = { broker: null, type: null, history: null };
         let deleteTargetId = null; 
         let editTargetId = null;   
+        let deleteTargetType = 'holding'; // 追加: 削除対象の種類 ('holding' または 'history')
 
         window.onload = () => {
             loadData();
@@ -608,6 +630,7 @@
             renderDashboard();
             renderHoldingsTable();
             renderManageTable();
+            renderHistoryManageTable(); // 追加: 履歴テーブルの描画
         }
 
         function calcNetValue(currentValue, costValue, accountType) {
@@ -951,6 +974,7 @@
         }
 
         function confirmDelete(id) {
+            deleteTargetType = 'holding';
             deleteTargetId = id;
             const target = holdings.find(h => h.id === id);
             if(!target) return;
@@ -961,15 +985,74 @@
                 </div>`;
             document.getElementById('delete-modal').classList.remove('hidden');
         }
+
+        // 追加: 履歴の削除確認モーダル
+        function confirmDeleteHistory(dateStr, value) {
+            deleteTargetType = 'history';
+            deleteTargetId = dateStr;
+            document.getElementById('delete-modal-text').innerHTML = `
+                以下の資産推移の履歴を削除します。<br>
+                <div class="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs md:text-sm font-medium">
+                    日付: <span class="font-bold">${dateStr}</span> <br>
+                    記録額: <span class="font-bold">${fmtJpy.format(value)}</span>
+                </div>`;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
         
         function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); deleteTargetId = null; }
+        
         function executeDelete() {
             if(deleteTargetId) {
-                if(deleteTargetId === editTargetId) cancelEdit();
-                holdings = holdings.filter(h => h.id !== deleteTargetId);
+                if (deleteTargetType === 'holding') {
+                    if(deleteTargetId === editTargetId) cancelEdit();
+                    holdings = holdings.filter(h => h.id !== deleteTargetId);
+                    showToast("保有データを削除しました", 'success');
+                } else if (deleteTargetType === 'history') {
+                    historyData = historyData.filter(h => h.date !== deleteTargetId);
+                    
+                    // 削除後、lastTotalAsset (前回更新比の基準) を1つ前のデータに戻す
+                    if (historyData.length > 0) {
+                        const sorted = [...historyData].sort((a,b) => new Date(b.date) - new Date(a.date));
+                        lastTotalAsset = sorted[0].value;
+                    } else {
+                        lastTotalAsset = 0;
+                    }
+                    showToast("履歴を削除しました", 'success');
+                }
+                
                 saveData();
+                updateAllViews();
                 closeDeleteModal();
             }
+        }
+
+        // 追加: 履歴データの一覧描画処理
+        function renderHistoryManageTable() {
+            const tbody = document.getElementById('manage-history-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (historyData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-4 text-center text-slate-500">履歴データがありません。</td></tr>`;
+                return;
+            }
+
+            // 新しい日付順にソートして表示
+            const sortedHistory = [...historyData].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedHistory.forEach(h => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+                        <td class="px-3 md:px-4 py-2 font-medium text-slate-700">${h.date}</td>
+                        <td class="px-3 md:px-4 py-2 text-right font-bold text-slate-800">${fmtJpy.format(h.value)}</td>
+                        <td class="px-3 md:px-4 py-2 text-center whitespace-nowrap">
+                            <button onclick="confirmDeleteHistory('${h.date}', ${h.value})" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1 md:p-1.5 rounded transition-colors" title="削除">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
         function showBreakdown(code, accountType) {
