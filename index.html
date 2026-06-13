@@ -170,25 +170,6 @@
                         </table>
                     </div>
                 </div>
-
-                <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-base md:text-lg font-bold text-slate-800">バックアップ・復元</h2></div>
-                    <div class="space-y-5">
-                        <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                            <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-file-arrow-down mr-2 text-primary"></i>ファイルで保存・復元 (おすすめ)</h3>
-                            <p class="text-[10px] md:text-xs text-slate-500 mb-3">本体にバックアップファイル(.json)をダウンロード、または読み込みます。</p>
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <button onclick="downloadBackupFile()" class="bg-primary hover:bg-blue-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors flex items-center justify-center whitespace-nowrap"><i class="fa-solid fa-download mr-2"></i>ダウンロード</button>
-                                <div class="relative flex-1"><input type="file" id="file-upload" accept=".json" onchange="uploadBackupFile(event)" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded bg-white"></div>
-                            </div>
-                        </div>
-                        <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                            <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-copy mr-2 text-slate-500"></i>テキストで保存・復元 (従来の方法)</h3>
-                            <div class="relative mb-3"><textarea id="backup-data" class="w-full h-16 md:h-20 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" readonly></textarea><button onclick="copyBackupText()" class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 rounded hover:bg-slate-700 shadow-sm"><i class="fa-regular fa-copy mr-1"></i> コピー</button></div>
-                            <div class="flex gap-2"><textarea id="import-data" class="w-full h-10 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" placeholder="ここに文字データを貼り付け..."></textarea><button onclick="importBackupText()" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors shadow-sm whitespace-nowrap">復元する</button></div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- 4. 設定 -->
@@ -205,7 +186,6 @@
                         <div class="bg-blue-50 p-3 md:p-4 rounded-lg border border-blue-100">
                             <h3 class="font-bold text-slate-700 text-xs md:text-sm mb-1 md:mb-2 flex items-center">
                                 2. カスタムAPI エンドポイント (必須)
-                                <span class="ml-2 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold">要再設定！</span>
                             </h3>
                             <p class="text-[10px] md:text-xs text-slate-500 mb-2 font-medium">※新しいGASプログラムのURLをここに貼り付けてください。</p>
                             <input type="text" id="api-url-custom" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-blue-200 rounded p-1.5 md:p-2 outline-none focus:border-primary text-[10px] md:text-sm font-mono transition-colors">
@@ -217,6 +197,26 @@
                         <div class="pt-4 border-t border-slate-200 flex items-center">
                             <button onclick="saveSettings()" class="bg-primary hover:bg-blue-700 text-white text-sm font-medium py-1.5 md:py-2 px-4 md:px-6 rounded transition-colors shadow-sm">設定を保存</button>
                             <span id="save-msg" class="ml-3 text-emerald-600 text-xs md:text-sm font-bold opacity-0 transition-opacity">保存しました！</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 移動してきたバックアップ・復元 -->
+                <div class="bg-white rounded-xl p-4 md:p-6 border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2"><h2 class="text-base md:text-lg font-bold text-slate-800">バックアップ・復元</h2></div>
+                    <div class="space-y-5">
+                        <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                            <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-file-arrow-down mr-2 text-primary"></i>ファイルで保存・復元 (おすすめ)</h3>
+                            <p class="text-[10px] md:text-xs text-slate-500 mb-3">本体にバックアップファイル(.json)をダウンロード、または読み込みます。</p>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button onclick="downloadBackupFile()" class="bg-primary hover:bg-blue-700 text-white text-xs md:text-sm font-medium py-2 px-4 rounded shadow-sm transition-colors flex items-center justify-center whitespace-nowrap"><i class="fa-solid fa-download mr-2"></i>ダウンロード</button>
+                                <div class="relative flex-1"><input type="file" id="file-upload" accept=".json" onchange="uploadBackupFile(event)" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-slate-200 rounded bg-white"></div>
+                            </div>
+                        </div>
+                        <div class="p-3 md:p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                            <h3 class="text-sm font-bold text-slate-700 mb-1 flex items-center"><i class="fa-solid fa-copy mr-2 text-slate-500"></i>テキストで保存・復元 (従来の方法)</h3>
+                            <div class="relative mb-3"><textarea id="backup-data" class="w-full h-16 md:h-20 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" readonly></textarea><button onclick="copyBackupText()" class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 rounded hover:bg-slate-700 shadow-sm"><i class="fa-regular fa-copy mr-1"></i> コピー</button></div>
+                            <div class="flex gap-2"><textarea id="import-data" class="w-full h-10 p-2 text-[10px] md:text-xs font-mono bg-white border border-slate-300 rounded outline-none focus:border-primary resize-none" placeholder="ここに文字データを貼り付け..."></textarea><button onclick="importBackupText()" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors shadow-sm whitespace-nowrap">復元する</button></div>
                         </div>
                     </div>
                 </div>
@@ -302,7 +302,6 @@
             const failedCodes = [];
             let errorDetailsText = `--- 取得エラーレポート (${new Date().toLocaleString()}) ---\n`;
             
-            // ★ 個別株をアプリから取得する機能を廃止し、すべてGASに一括依頼する
             const usHoldingsToFinnhub = uniqueHoldings.filter(h => h.type === 'US' && finnhubKey);
             const gasHoldings = uniqueHoldings.filter(h => h.type === 'JP' || h.type === 'FUND' || (h.type === 'US' && !finnhubKey));
 
@@ -328,8 +327,6 @@
                         const res = await fetch(`${customUrl}?codes=${codesStr}`);
                         if(res.ok) {
                             const data = await res.json();
-                            
-                            // ★ バージョンチェック（古いURLが貼られていたら確実にエラーを出す）
                             if (data.version !== "v6") {
                                 throw new Error("GASが古いです！新しいURLを設定画面に貼り直してください。");
                             }
